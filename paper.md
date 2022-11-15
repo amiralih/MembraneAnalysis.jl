@@ -79,8 +79,7 @@ Figure sizes can be customized by adding an optional second parameter:
 
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+This project was supported by the Intramural Research Program (IRP) of the unice Kennedy Shriver National Institute of Child Health and Human Development (NICHD) at the National Institutes of Health (NIH).
 
 # References
 Example paper.bib file:
