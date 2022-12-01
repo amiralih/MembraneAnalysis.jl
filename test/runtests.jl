@@ -1,21 +1,22 @@
 using MembraneAnalysis
 using Test
+using DelimitedFiles
 
 @testset "MembraneAnalysis.jl" begin
         
         # setting system parameters
 
         begin
-            const traj_dir = "./"
-            const traj_file = traj_dir * "t_1.xtc"
-            const pdb_file = traj_dir * "s_1.pdb"
-            const lipids = [DOPE_m2, DOPC_m2]
-            const L_grid = 15
-            const q_max = 0.08
-            const output_dir = "./temp/"
+            traj_dir = "./sample_files/"
+            traj_file = traj_dir * "t_1.xtc"
+            pdb_file = traj_dir * "s_1.pdb"
+            lipids = [DOPE_m2, DOPC_m2]
+            L_grid = 15
+            q_max = 0.08
+            output_dir = "./temp_out/"
             if !isdir(output_dir) mkdir(output_dir) end
-            const fs_file = output_dir * "fs_1.h5"
-            const ds_file = output_dir * "ds_1.h5"
+            fs_file = output_dir * "fs_1.h5"
+            ds_file = output_dir * "ds_1.h5"
         end
 
         # calculating fluctuation spectrum of trajectories
@@ -28,12 +29,16 @@ using Test
             L_grid=L_grid
         )
 
+        @test isfile(fs_file)
+
         # calculating area expansion modulus
 
         area_expansion_modulus(;
             traj_files=[traj_file],
             output_file=output_dir * "KA.dat"
         )
+
+        @test readdlm(output_dir * "KA.dat") ≈ readdlm(traj_dir * "KA.dat")
 
         # calculating mean height of lipids heavy atoms from the midplane
 
@@ -44,6 +49,9 @@ using Test
             lipids=lipids
         )
 
+        @test readdlm(output_dir * "DOPE_zs.dat")[:, 2] ≈ readdlm(traj_dir * "DOPE_zs.dat")[:, 2]
+        @test readdlm(output_dir * "DOPC_zs.dat")[:, 2] ≈ readdlm(traj_dir * "DOPC_zs.dat")[:, 2]
+        
         # calculating mean sampled curvature of heavy atoms of the lipids
 
         lipids_sampled_curvature(;
@@ -55,6 +63,9 @@ using Test
             q_max=q_max
         )
 
+        @test readdlm(output_dir * "DOPE_cs.dat")[:, 2] ≈ readdlm(traj_dir * "DOPE_cs.dat")[:, 2]
+        @test readdlm(output_dir * "DOPC_cs.dat")[:, 2] ≈ readdlm(traj_dir * "DOPC_cs.dat")[:, 2]
+        
         # calculating curvature spectrum of reference atoms of the lipids
 
         lipids_curvature_spectrum(;
@@ -66,6 +77,9 @@ using Test
             q_max=q_max
         )
 
+        @test readdlm(output_dir * "DOPE_cqs.dat") ≈ readdlm(traj_dir * "DOPE_cqs.dat")
+        @test readdlm(output_dir * "DOPC_cqs.dat") ≈ readdlm(traj_dir * "DOPC_cqs.dat")
+        
         # calculating thickness spectrum of reference atoms of the lipids
 
         lipids_thickness_spectrum(;
@@ -77,6 +91,9 @@ using Test
             q_max=q_max
         )
 
+        @test readdlm(output_dir * "DOPE_tqs.dat") ≈ readdlm(traj_dir * "DOPE_tqs.dat")
+        @test readdlm(output_dir * "DOPC_tqs.dat") ≈ readdlm(traj_dir * "DOPC_tqs.dat")
+        
         # calculating density spectrum of trajectories
 
         lipids_density_spectrum(;
@@ -87,6 +104,8 @@ using Test
             L_grid=L_grid
         )
 
-        rm(output_dir)
-        
+        @test isfile(ds_file)
+
+        rm(output_dir, recursive=true)
+
 end
