@@ -10,7 +10,7 @@ authors:
     orcid: 0000-0002-2580-3577
     affiliation: 1
   - name: Alexander J. Sodt
-  - orcid: 0000-0002-5570-8212
+    orcid: 0000-0002-5570-8212
     affiliation: 1
 affiliations:
  - name: Eunice Kennedy Shriver National Institute of Child Health and Human Development, Bethesda, MD 20892, United States
