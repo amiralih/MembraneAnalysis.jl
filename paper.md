@@ -32,6 +32,6 @@ Biological membranes separate living cells from their surrounding, and, in case 
 
 # Acknowledgements
 
-This project was supported by the Intramural Research Program (IRP) of the unice Kennedy Shriver National Institute of Child Health and Human Development (NICHD) at the National Institutes of Health (NIH).
+This project was supported by the Intramural Research Program (IRP) of the Eunice Kennedy Shriver National Institute of Child Health and Human Development (NICHD) at the National Institutes of Health (NIH).
 
 # References
