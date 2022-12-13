@@ -1,1 +1,1 @@
-# Example Usage of ``MembraneAnalysis.jl'' Package
+# Example Usage of `MembraneAnalysis.jl` Package
