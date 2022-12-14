@@ -1,3 +1,4 @@
+![logo](MembraneAnalysis logo.png)
 # MembraneAnalysis.jl
 A package for analyzing molecular dynamics simulations of lipid membranes
 
