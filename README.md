@@ -5,16 +5,14 @@
 # MembraneAnalysis.jl
 A package for analyzing molecular dynamics simulations of lipid membranes
 
-<p align="center">
-  <a href="https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/Tests.yml/">
-    <img src="https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/Tests.yml/badge.svg"
-         alt="Tests">
-  </a> 
-</p>
+[![](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/Tests.yml/badge.svg)](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/Tests.yml/)
 
-[![Build status (Github Actions)](https://github.com/amiralih/MembraneAnalysis.jl/workflows/CI/badge.svg)](https://github.com/amiralih/MembraneAnalysis.jl/actions)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://amiralih.github.io/MembraneAnalysis.jl/dev)
 
-[![codecov](https://codecov.io/gh/amiralih/MembraneAnalysis.jl/branch/main/graph/badge.svg?token=XEOIX2QDON)](https://codecov.io/gh/amiralih/MembraneAnalysis.jl)
+## Installation
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://amiralih.github.io/MembraneAnalysis.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://amiralih.github.io/MembraneAnalysis.jl/dev)
+`MembraneAnalysis.jl` can be installed using the Julia package manager. From the Julia REPL, type `]` to enter the Pkg REPL mode and run
+
+```julia
+pkg> add MembraneAnalysis
+```
