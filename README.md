@@ -6,7 +6,7 @@
 A package for analyzing molecular dynamics simulations of lipid membranes
 
 [![](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/tests.yml/)
-[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://amiralih.github.io/MembraneAnalysis.jl/dev)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://amiralih.github.io/MembraneAnalysis.jl/dev)
 
 ## Installation
 
@@ -15,3 +15,7 @@ A package for analyzing molecular dynamics simulations of lipid membranes
 ```julia
 pkg> add MembraneAnalysis
 ```
+
+## Contribution
+
+User feedback is appreciated. Please create a [GitHub Issue](https://github.com/amiralih/MembraneAnalysis.jl/issues) to report bugs or suggest new features, or a [Pull Request](https://github.com/amiralih/MembraneAnalysis.jl/pulls) to contribute to the package. 
