@@ -13,4 +13,5 @@ A package for analyzing molecular dynamics simulations of lipid membranes
 </p>
 
 [![Build status (Github Actions)](https://github.com/amiralih/MembraneAnalysis.jl/workflows/CI/badge.svg)](https://github.com/amiralih/MembraneAnalysis.jl/actions)
-[![codecov.io](http://codecov.io/github/amiralih/MembraneAnalysis.jl/coverage.svg?branch=main)](http://codecov.io/github/amiralih/MembraneAnalysis.jl?branch=main)
+
+[![codecov](https://codecov.io/gh/amiralih/MembraneAnalysis.jl/branch/main/graph/badge.svg?token=XEOIX2QDON)](https://codecov.io/gh/amiralih/MembraneAnalysis.jl)
