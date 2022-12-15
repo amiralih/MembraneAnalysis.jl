@@ -1,0 +1,29 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+
+token: 0c0e9369-aeb4-4f04-ad44-b9159d192f6a
+
+coverage:
+  precision: 2
+  round: down
+  range: 80...90
+
+  status:
+    # Learn more at http://docs.codecov.io/docs/codecov-yaml
+    project:
+      default:
+        enabled: yes
+        target: 1
+        threshold: 0.1
+    patch:
+      default:
+        enabled: off
+
+ignore:
+  - docs
+  - tutorial
+  - test
+  - .github
+  - .git
