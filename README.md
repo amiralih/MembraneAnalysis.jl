@@ -5,8 +5,7 @@
 # MembraneAnalysis.jl
 A package for analyzing molecular dynamics simulations of lipid membranes
 
-[![](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/Tests.yml/badge.svg)](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/Tests.yml/)
-
+[![](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/tests.yml/)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://amiralih.github.io/MembraneAnalysis.jl/dev)
 
 ## Installation
