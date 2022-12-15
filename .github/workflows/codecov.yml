@@ -22,7 +22,11 @@ coverage:
         enabled: off
 
 ignore:
+  - "*.md"
+  - "*.png"
+  - "*.yml"
   - docs
+  - test
   - tutorial
   - test
   - .github
