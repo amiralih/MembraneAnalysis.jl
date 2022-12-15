@@ -3,10 +3,11 @@ using MembraneAnalysis
 
 push!(LOAD_PATH,"../src/")
 makedocs(
-    sitename="MembraneAnalysis.jl Documentation",
+    sitename="MembraneAnalysis.jl",
     pages = [
              "Index" => "index.md",
              "Another Page" => "anotherPage.md",
+             "Tutorial" => "anotherPage.md",
             ],
     format = Documenter.HTML(prettyurls = false)
 )
