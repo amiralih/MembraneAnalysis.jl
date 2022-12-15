@@ -7,6 +7,8 @@ on:
     branches:
       - main
     tags: '*'
+env:
+  CODECOV_TOKEN: 0c0e9369-aeb4-4f04-ad44-b9159d192f6a
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
