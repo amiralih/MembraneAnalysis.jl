@@ -113,6 +113,6 @@ lipids_sampled_curvature(;
 ## Transverse curvature bias curve
 
 Using the outputs of the two previous steps we can 
-
+![](https://github.com/amiralih/MembraneAnalysis.jl/tutorial/TCB_DOPC_10.png)
 
 
