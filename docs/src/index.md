@@ -1,3 +1,3 @@
 # MembraneAnalysis.jl
 
-Documentation for MembraneAnalysis.jl
+Documentation for MembraneAnalysis.jl package
