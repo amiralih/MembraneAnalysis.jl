@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/amiralih/MembraneAnalysis.jl/blob/86444fd1e42604c0717168e380078bff62937650/MembraneAnalysis%20logo.png" width="500">
+<img src="https://github.com/amiralih/MembraneAnalysis.jl/blob/a17308b3e8ef16e4fb446d250a5dc8ec2d1011cd/logo.png" width="500">
 </p>
 
 # MembraneAnalysis.jl
