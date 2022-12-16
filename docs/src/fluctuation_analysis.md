@@ -1,7 +1,7 @@
 # Fluctuation Analysis
 
 ```@docs
-fluctuation_analysis
+fluctuation_spectrum
 ```
 
 ```@docs
