@@ -5,7 +5,8 @@ push!(LOAD_PATH,"../src/")
 makedocs(
     sitename="MembraneAnalysis.jl",
     pages = [
-             "Index" => "index.md",
+             "Introduction" => "index.md",
+             "Fluctuation Analysis" => "fluctuation_analysis.md",
              "Curvature Analysis" => "curvature_analysis.md",
              "Another Page" => "anotherPage.md",
              "Tutorial" => "anotherPage.md",

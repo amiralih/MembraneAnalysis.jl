@@ -1,5 +1,23 @@
 """
-Calculates the fluctuation spectrum of a lipid bilayer simulation trajectory and saves the output as a HDF5 file.
+    fluctuation_spectrum(;
+        pdb_file,
+        traj_file,
+        output_file,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        L_grid)
+
+Calculates the height and thickness fluctuation spectrum of a lipid bilayer simulation trajectory and saves the results as a HDF5 file with labels `hq` and `tq`.
+
+### Keyword arguments
+
+* `pdf_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `output_file`: output HDF5;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `L_grid`: lenght of the lattice grid used to discretize the surface.
+
 """
 function fluctuation_spectrum(; 
     pdb_file,
@@ -156,7 +174,17 @@ function fluctuation_spectrum(;
 end
 
 """
-Calculates area expansion modulus in units of kBT / Å^2.
+    area_expansion_modulus(;
+        traj_files,
+        output_file)
+
+Calculates area expansion modulus in units of kBT per square of length unit in trajectories (e.g., Å^2).
+
+### Keyword arguments
+
+* `traj_files`: a list of trajectory files;
+* `output_file`: output file to save the result.
+
 """
 function area_expansion_modulus(;
         traj_files,
