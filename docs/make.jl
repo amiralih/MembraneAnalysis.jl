@@ -6,6 +6,7 @@ makedocs(
     sitename="MembraneAnalysis.jl",
     pages = [
              "Index" => "index.md",
+             "Curvature Analysis" => "curvature_analysis.md",
              "Another Page" => "anotherPage.md",
              "Tutorial" => "anotherPage.md",
             ],
