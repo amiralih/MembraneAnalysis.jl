@@ -112,7 +112,13 @@ lipids_sampled_curvature(;
 
 ## Transverse curvature bias curve
 
-Using the outputs of the two previous steps we can 
-![](https://github.com/amiralih/MembraneAnalysis.jl/tutorial/TCB_DOPC_10.png)
+Using the outputs of the two previous steps we can plot the transverse curvature bias curves, which can be used to identify the neutral surface atom of each lipid, calculate the bending modulus of the membrane and estimate the difference in spontanous curvature of the membrane components [[1]](#1).
+<p align="center">
+<img src="https://github.com/amiralih/MembraneAnalysis.jl/blob/aa9d4999c326abc512bd719b6c6a1e155c8cb94c/tutorial/TCB_DOPC_10.png" width="500">
+</p>
 
-
+## References
+<a id="1">[1]</a> 
+Sapp, K. C., Beaven, A. H., and Sodt, A. J. (2021). 
+Spatial extent of a single lipid's influence on bilayer mechanics
+Phys. Rev. E 103, 042413.
