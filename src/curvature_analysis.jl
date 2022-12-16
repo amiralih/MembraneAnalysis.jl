@@ -1,5 +1,19 @@
 """
-Calculates curvature per mode of a point (x, y) from fluctuation spectrum.
+    curvature(;
+        point,
+        hq,
+        box_dims,
+        q_max)
+
+Calculates curvature per mode of a point from fluctuation spectrum.
+
+### Keyword arguments
+
+* `point`: ordered pair of X and Y values;
+* `hq`: 2D matrix of height fluctuation spectrum;
+* `box_dims`: ordered pair of simulation box Lx and Ly values;
+* `q_max`: maximum q mode magnitude value to be used.
+
 """
 function curvature(;
     point,
