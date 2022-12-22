@@ -53,7 +53,25 @@ function curvature(;
 end
 
 """
-Calculates mean sampled curvature of C atoms of each lipid.
+    lipids_sampled_curvature(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_dir,
+        lipids,
+        q_max)
+
+Calculates mean sampled curvature of heavy atoms of each lipid. Results for lipid "XXXX" will be stored in `XXXX_cs.dat` in the output directory.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_dir`: output directory;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `q_max`: maximum q mode magnitude value to be used.
+
 """
 function lipids_sampled_curvature(;
     pdb_file,
@@ -187,7 +205,26 @@ function lipids_sampled_curvature(;
 end
 
 """
-Calculate average curvature of CA atoms of peptide residues.
+    peptide_sampled_curvature(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_dir,
+        lipids,
+        q_max)
+
+Calculates mean sampled curvature of CA atoms of peptide residues. 
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_file`: output file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `n_residues`: number of residues in the peptide;
+* `q_max`: maximum q mode magnitude value to be used.
+
 """
 function peptide_sampled_curvature(;
     pdb_file,
@@ -292,7 +329,27 @@ function peptide_sampled_curvature(;
 end
 
 """
-Calculates curvature spectrum of the lipids using their reference atom position. Assumes square (Lx = Ly) bilayer.
+    lipids_curvature_spectrum(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_dir,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        q_max)
+
+Calculates curvature spectrum of the lipids using their reference atom position. Assumes square (Lx = Ly) bilayer. Results for lipid "XXXX" will be stored in `XXXX_cqs.dat` in the output directory.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_dir`: output directory;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `q_max`: maximum q mode magnitude value to be used.
+
 """
 function lipids_curvature_spectrum(;
     pdb_file,
@@ -435,7 +492,27 @@ function lipids_curvature_spectrum(;
 end
 
 """
+    peptide_curvature_spectrum(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_file,
+        lipids,
+        ref_residue),
+        q_max)
+
 Calculates curvature spectrum of the peptide using the CA atom of its reference residue. Assumes square (Lx = Ly) bilayer.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_file`: output file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_residue`: residue number of the reference residue of the peptide;
+* `q_max`: maximum q mode magnitude value to be used.
+
 """
 function peptide_curvature_spectrum(;
     pdb_file,
