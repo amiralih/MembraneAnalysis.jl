@@ -1,5 +1,25 @@
 """
-Calculates thickness spectrum of the lipids using their reference atom position. Assumes square (Lx = Ly) bilayer.
+    lipids_thickness_spectrum(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_dir,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        q_max)
+
+Calculates thickness spectrum of the lipids using their reference atom position. Assumes square (Lx = Ly) bilayer. Results for lipid "XXXX" will be stored in `XXXX_tqs.dat` in the output directory.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_dir`: output directory;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `q_max`: maximum q mode magnitude value to be used.
+
 """
 function lipids_thickness_spectrum(;
     pdb_file,
@@ -142,7 +162,27 @@ function lipids_thickness_spectrum(;
 end
 
 """
+    peptide_thickness_spectrum(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_file,
+        lipids,
+        ref_residue),
+        q_max)
+
 Calculates thickness spectrum of the peptide using the CA atom of its reference residue. Assumes square (Lx = Ly) bilayer.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_file`: output file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_residue`: residue number of the reference residue of the peptide;
+* `q_max`: maximum q mode magnitude value to be used.
+
 """
 function peptide_thickness_spectrum(;
     pdb_file,
