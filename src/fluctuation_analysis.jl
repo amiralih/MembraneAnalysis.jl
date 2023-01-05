@@ -163,6 +163,15 @@ function fluctuation_spectrum(;
 
         hq[frame_index, :, :]  = (hq_1 .+ hq_2) ./ 2
         tq[frame_index, :, :]  = (hq_1 .- hq_2)
+        
+        # phase-shifting the FFT to correspond to cell centers
+
+        Δϕs_x = fftfreq(n_grid_x, n_grid_x/Lx) * (-π) * (Lx / n_grid_x)
+        Δϕs_y = fftfreq(n_grid_y, n_grid_y/Ly) * (-π) * (Ly / n_grid_y)
+        Δϕs = [(Δϕ_x + Δϕ_y) for Δϕ_x in Δϕs_x, Δϕ_y in Δϕs_y]
+
+        hq[frame_index, :, :] .*= exp.(im .* Δϕs)
+        tq[frame_index, :, :] .*= exp.(im .* Δϕs)
     end
     
     Chemfiles.close(traj); GC.gc()

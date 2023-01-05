@@ -102,6 +102,14 @@ function lipids_density_spectrum(;
             dq_1[lipid.name][frame_index, :, :] = fft(ns_1) * ((Lx * Ly) / (n_grid_x * n_grid_y))
             dq_2[lipid.name][frame_index, :, :] = fft(ns_2) * ((Lx * Ly) / (n_grid_x * n_grid_y))
 
+            # phase-shifting the FFT to correspond to cell centers
+
+            Δϕs_x = fftfreq(n_grid_x, n_grid_x/Lx) * (-π) * (Lx / n_grid_x)
+            Δϕs_y = fftfreq(n_grid_y, n_grid_y/Ly) * (-π) * (Ly / n_grid_y)
+            Δϕs = [(Δϕ_x + Δϕ_y) for Δϕ_x in Δϕs_x, Δϕ_y in Δϕs_y]
+
+            dq_1[lipid.name][frame_index, :, :] .*= exp.(im .* Δϕs)
+            dq_2[lipid.name][frame_index, :, :] .*= exp.(im .* Δϕs)
         end
 
     end
@@ -207,7 +215,15 @@ function peptide_density_spectrum(;
 
         dq_1[frame_index, :, :] = fft(ns_1) * ((Lx * Ly) / (n_grid_x * n_grid_y))
         dq_2[frame_index, :, :] = fft(ns_2) * ((Lx * Ly) / (n_grid_x * n_grid_y))
+        
+        # phase-shifting the FFT to correspond to cell centers
 
+        Δϕs_x = fftfreq(n_grid_x, n_grid_x/Lx) * (-π) * (Lx / n_grid_x)
+        Δϕs_y = fftfreq(n_grid_y, n_grid_y/Ly) * (-π) * (Ly / n_grid_y)
+        Δϕs = [(Δϕ_x + Δϕ_y) for Δϕ_x in Δϕs_x, Δϕ_y in Δϕs_y]
+
+        dq_1[frame_index, :, :] .*= exp.(im .* Δϕs)
+        dq_2[frame_index, :, :] .*= exp.(im .* Δϕs)
     end
     
     Chemfiles.close(traj); GC.gc()
