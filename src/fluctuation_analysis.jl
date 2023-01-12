@@ -16,7 +16,7 @@ Calculates the height and thickness fluctuation spectrum of a lipid bilayer simu
 * `output_file`: output HDF5;
 * `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
 * `ref_atoms`: a dictionary of reference atoms for each lipid;
-* `L_grid`: lenght of the lattice grid used to discretize the surface.
+* `L_grid`: length of the lattice grid used to discretize the surface.
 
 """
 function fluctuation_spectrum(; 
@@ -54,6 +54,7 @@ function fluctuation_spectrum(;
 
     hq = zeros(ComplexF32, n_frames, n_grid_x, n_grid_y)
     tq = zeros(ComplexF32, n_frames, n_grid_x, n_grid_y)
+    l_id = zeros(Int32, n_frames, length(leaflet_id))
 
     println("Calculating fluctuation spectrum for trajectory file $(traj_file)")
     @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
@@ -85,6 +86,89 @@ function fluctuation_spectrum(;
         
         ref_inds_1 = [i for i in ref_inds if leaflet_id[i] == 1]
         ref_inds_2 = [i for i in ref_inds if leaflet_id[i] == -1]
+        
+        # calculate initial mean Z values to dynamically determine lipids leaflet
+        
+        zs_m = zeros(Float32, n_grid_x, n_grid_y)
+
+        # find average z of cells for leaflet 1
+
+        zs_1 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_1 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_1
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_1[x_index, y_index] += coords[3, index]
+            ns_1[x_index, y_index] += 1
+        end
+
+        # assign weighted average of adjacent cells to empty cells
+
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            if ns_1[i, j] == 0
+                
+                # find index pairs of adjacent cells
+
+                up    = (mod1(i - 1, n_grid_x), j)
+                down  = (mod1(i + 1, n_grid_x), j)
+                left  = (i, mod1(j - 1, n_grid_y))
+                right = (i, mod1(j + 1, n_grid_y))
+                
+                neighbors = [up, down, left, right]
+
+                zs_1[i, j] = sum([zs_1[index_pair...] for index_pair in neighbors])
+                ns_1[i, j] = sum([ns_1[index_pair...] for index_pair in neighbors])
+            end
+        end
+
+        zs_1 = zs_1 ./ ns_1
+        zs_m .+= zs_1
+       
+        # find average z of cells for leaflet 2
+
+        zs_2 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_2 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_2
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_2[x_index, y_index] += coords[3, index]
+            ns_2[x_index, y_index] += 1
+        end
+
+        # assign weighted average of adjacent cells to empty cells
+
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            if ns_2[i, j] == 0
+                
+                # find index pairs of adjacent cells
+
+                up    = (mod1(i - 1, n_grid_x), j)
+                down  = (mod1(i + 1, n_grid_x), j)
+                left  = (i, mod1(j - 1, n_grid_y))
+                right = (i, mod1(j + 1, n_grid_y))
+                
+                neighbors = [up, down, left, right]
+
+                zs_2[i, j] = sum([zs_2[index_pair...] for index_pair in neighbors])
+                ns_2[i, j] = sum([ns_2[index_pair...] for index_pair in neighbors])
+            end
+        end
+
+        zs_2 = zs_2 ./ ns_2
+        zs_m .+= zs_2
+
+        # determine lipids leaflet
+        
+        zs_m ./= 2
+        leaflet_id = atom_leaflet_dynamic(coords=coords, zs_m=zs_m, Ls=(Lx, Ly),
+                                  pdb_file=pdb_file, lipids=lipids)
+        l_id[frame_index, :] = leaflet_id
+       
+        # repeat analysis with dynamically determined lipid leaflet
         
         # find average z of cells for leaflet 1
 
@@ -155,7 +239,7 @@ function fluctuation_spectrum(;
 
         zs_2 = zs_2 ./ ns_2
         zs_2 = zs_2 .- midplane
-       
+        
         # calculate leaflets sepectra
 
         hq_1 = fft(zs_1) * ((Lx * Ly) / (n_grid_x * n_grid_y))
@@ -178,6 +262,7 @@ function fluctuation_spectrum(;
     
     h5write(output_file, "hq", hq)
     h5write(output_file, "tq", tq)
+    h5write(output_file, "l_id", l_id)
 
     return nothing
 end

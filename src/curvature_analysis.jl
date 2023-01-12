@@ -121,11 +121,14 @@ function lipids_sampled_curvature(;
         n_frames = Int(Chemfiles.size(traj))
         
         hq = h5read(fs_file, "hq")
+        l_id = h5read(fs_file, "l_id")
 
         println("Calculating mean curvatures for trajectory file $(traj_file)")
         @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
             
             # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
 
             frame = Chemfiles.read_step(traj, frame_index - 1)
             box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
@@ -260,11 +263,14 @@ function peptide_sampled_curvature(;
         n_frames = Int(Chemfiles.size(traj))
         
         hq = h5read(fs_file, "hq")
+        l_id = h5read(fs_file, "l_id")
 
         println("Calculating mean curvature for trajectory file $(traj_file)")
         @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
             
             # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
 
             frame = Chemfiles.read_step(traj, frame_index - 1)
             box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
@@ -395,11 +401,14 @@ function lipids_curvature_spectrum(;
         n_frames = Int(Chemfiles.size(traj))
         
         hq = h5read(fs_file, "hq")
+        l_id = h5read(fs_file, "l_id")
 
         println("Calculating curvature spectrum for trajectory file $(traj_file)")
         @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
             
             # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
 
             frame = Chemfiles.read_step(traj, frame_index - 1)
             box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
@@ -557,11 +566,14 @@ function peptide_curvature_spectrum(;
         n_frames = Int(Chemfiles.size(traj))
         
         hq = h5read(fs_file, "hq")
+        l_id = h5read(fs_file, "l_id")
 
         println("Calculating curvature spectrum for trajectory file $(traj_file)")
         @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
             
             # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
 
             frame = Chemfiles.read_step(traj, frame_index - 1)
             box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))

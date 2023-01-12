@@ -21,6 +21,7 @@ export POPC_aa,
 include("lipids.jl")
 
 export atom_leaflet,
+       atom_leaflet_dynamic,
        box_dimensions,
        blocking_error,
        lipids_atoms_height,

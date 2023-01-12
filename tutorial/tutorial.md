@@ -63,30 +63,18 @@ area_expansion_modulus(;
 )
 ```
 
-## Calculating area expansion modulus
-
-`area_expansion_modulus` calculates area expansion modulus from area fluctuations and stores them in a file.
-
-```julia
-traj_files = [traj_dir * traj_name * string(i) * traj_ext for i in traj_inds]
-output_file = output_dir * "KA.dat"
-
-area_expansion_modulus(;
-    traj_files=traj_files,
-    output_file=output_file
-)
-```
-
 ## Calculating mean height from midplane of the heavy atoms of the lipids
 
 We use the first trajecotry to calculate the average height of the heavy atoms of the lipids using `lipids_atoms_heights` method which will save them to `XXXX_zs.dat` files in the specified output directory (where "XXXX" is the name of the lipid).
 
 ```julia
 traj_file = traj_dir * traj_name * string(first(traj_inds)) * traj_ext
+fs_file = output_dir * "fs_$(first(traj_inds)).h5"
 
 lipids_atoms_height(;
     pdb_file=pdb_file,
     traj_file=traj_file,
+    fs_file=fs_file,
     output_dir=output_dir,
     lipids=lipids
 )

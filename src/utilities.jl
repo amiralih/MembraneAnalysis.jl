@@ -5,22 +5,55 @@ function atom_leaflet(;
         pdb_file,
         lipids,
 )
-        atoms = PDBTools.readPDB(pdb_file)
-        
-        leaflet_id = zeros(Int, length(atoms))
-        
-        for lipid in lipids
-            indices = [a.index for a in atoms if a.resname == lipid.name && a.name == lipid.head_atom]
-            for ind in indices
-                if atoms[ind].z > atoms[ind + lipid.n_atoms - 1].z
-                    leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= 1
-                else
-                    leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= -1
-                end
+    atoms = PDBTools.readPDB(pdb_file)
+    
+    leaflet_id = zeros(Int, length(atoms))
+    
+    for lipid in lipids
+        indices = [a.index for a in atoms if a.resname == lipid.name && a.name == lipid.head_atom]
+        for ind in indices
+            if atoms[ind].z > atoms[ind + lipid.n_atoms - 1].z
+                leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= 1
+            else
+                leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= -1
             end
         end
+    end
 
-        return leaflet_id
+    return leaflet_id
+end
+
+"""
+Determines the leaflet of each atom of the lipid in a bilayer based on vertical position of the head atoms relative to the leaflet mean height. Outputs an array of ±1s.
+"""
+function atom_leaflet_dynamic(;
+        coords,
+        zs_m,
+        Ls,
+        pdb_file,
+        lipids,
+)
+    atoms = PDBTools.readPDB(pdb_file)
+    
+    leaflet_id = zeros(Int, length(atoms))
+    
+    n_grid_x, n_grid_y = size(zs_m) 
+    Lx, Ly = Ls
+
+    for lipid in lipids
+        indices = [a.index for a in atoms if a.resname == lipid.name && a.name == lipid.head_atom]
+        for ind in indices
+            x_index = Int(floor(coords[1, ind] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, ind] * n_grid_y / Ly)) + 1
+            if atoms[ind].z > zs_m[x_index, y_index]
+                leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= 1
+            else
+                leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= -1
+            end
+        end
+    end
+
+    return leaflet_id
 end
 
 """
@@ -78,6 +111,7 @@ Calculates the average distance of each carbon atom of each lipid from the midpl
 function lipids_atoms_height(;
     pdb_file,
     traj_file,
+    fs_file,
     output_dir,
     lipids
 )
@@ -86,6 +120,7 @@ function lipids_atoms_height(;
 
     atoms = PDBTools.readPDB(pdb_file)
     leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
+    l_id = h5read(fs_file, "l_id")
 
     tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
 
@@ -115,6 +150,8 @@ function lipids_atoms_height(;
     @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
         
         # read a frame
+        
+        leaflet_id = l_id[frame_index, :]
 
         frame = Chemfiles.read_step(traj, frame_index - 1)
         box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))

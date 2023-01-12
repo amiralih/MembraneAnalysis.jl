@@ -65,11 +65,14 @@ function lipids_thickness_spectrum(;
         n_frames = Int(Chemfiles.size(traj))
         
         tq = h5read(fs_file, "tq")
+        l_id = h5read(fs_file, "l_id")
 
         println("Calculating thickness spectrum for trajectory file $(traj_file)")
         @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
             
             # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
 
             frame = Chemfiles.read_step(traj, frame_index - 1)
             box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
@@ -228,11 +231,14 @@ function peptide_thickness_spectrum(;
         n_frames = Int(Chemfiles.size(traj))
         
         tq = h5read(fs_file, "tq")
+        l_id = h5read(fs_file, "l_id")
 
         println("Calculating thickness spectrum for trajectory file $(traj_file)")
         @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
             
             # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
 
             frame = Chemfiles.read_step(traj, frame_index - 1)
             box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))

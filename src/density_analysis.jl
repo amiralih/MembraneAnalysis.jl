@@ -4,6 +4,7 @@ Calculates the lateral density spectrum of lipids in a lipid bilayer simulation 
 function lipids_density_spectrum(; 
     pdb_file,
     traj_file,
+    fs_file,
     output_file,
     lipids,
     ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
@@ -14,6 +15,7 @@ function lipids_density_spectrum(;
 
     atoms = PDBTools.readPDB(pdb_file)
     leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
+    l_id = h5read(fs_file, "l_id")
 
     tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
 
@@ -48,6 +50,8 @@ function lipids_density_spectrum(;
     @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
         
         # read a frame
+        
+        leaflet_id = l_id[frame_index, :]
 
         frame = Chemfiles.read_step(traj, frame_index - 1)
         box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
@@ -130,6 +134,7 @@ Calculates the lateral density spectrum of the peptide in a lipid bilayer simula
 function peptide_density_spectrum(; 
     pdb_file,
     traj_file,
+    fs_file,
     output_file,
     lipids,
     ref_residue,
@@ -140,6 +145,7 @@ function peptide_density_spectrum(;
 
     atoms = PDBTools.readPDB(pdb_file)
     leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
+    l_id = h5read(fs_file, "l_id")
 
     tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
 
@@ -167,6 +173,8 @@ function peptide_density_spectrum(;
     @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
         
         # read a frame
+        
+        leaflet_id = l_id[frame_index, :]
 
         frame = Chemfiles.read_step(traj, frame_index - 1)
         box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
@@ -240,6 +248,7 @@ Calculates the lateral (2-D) radial density function of lipid A and lipid B in a
 function lipids_radial_distribution(; 
     pdb_file,
     traj_file,
+    fs_file,
     output_file,
     lipids,
     ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
@@ -254,6 +263,7 @@ function lipids_radial_distribution(;
 
     atoms = PDBTools.readPDB(pdb_file)
     leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
+    l_id = h5read(fs_file, "l_id")
 
     tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
 
@@ -283,6 +293,17 @@ function lipids_radial_distribution(;
     @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
         
         # read a frame
+
+        leaflet_id = l_id[frame_index, :]
+
+        ref_inds_A1 = [a.index for a in atoms if a.resname == lipid_A.name
+                       && a.name == ref_atoms[lipid_A] && leaflet_id[a.index] == 1]
+        ref_inds_A2 = [a.index for a in atoms if a.resname == lipid_A.name
+                       && a.name == ref_atoms[lipid_A] && leaflet_id[a.index] == -1]
+        ref_inds_B1 = [a.index for a in atoms if a.resname == lipid_B.name
+                       && a.name == ref_atoms[lipid_B] && leaflet_id[a.index] == 1]
+        ref_inds_B2 = [a.index for a in atoms if a.resname == lipid_B.name
+                       && a.name == ref_atoms[lipid_B] && leaflet_id[a.index] == -1]
 
         frame = Chemfiles.read_step(traj, frame_index - 1)
         box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
@@ -403,6 +424,7 @@ function peptide_radial_distribution(;
 
     atoms = PDBTools.readPDB(pdb_file)
     leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
+    l_id = h5read(fs_file, "l_id")
 
     tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
     
@@ -433,6 +455,13 @@ function peptide_radial_distribution(;
     @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
         
         # read a frame
+        
+        leaflet_id = l_id[frame_index, :]
+    
+        ref_inds_B1 = [a.index for a in atoms if a.resname == lipid.name
+                       && a.name == ref_atoms[lipid] && leaflet_id[a.index] == 1]
+        ref_inds_B2 = [a.index for a in atoms if a.resname == lipid.name
+                       && a.name == ref_atoms[lipid] && leaflet_id[a.index] == -1]
 
         frame = Chemfiles.read_step(traj, frame_index - 1)
         box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))

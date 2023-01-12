@@ -45,6 +45,7 @@ using DelimitedFiles
         lipids_atoms_height(;
             pdb_file=pdb_file,
             traj_file=traj_file,
+            fs_file=fs_file,
             output_dir=output_dir,
             lipids=lipids
         )
@@ -99,6 +100,7 @@ using DelimitedFiles
         lipids_density_spectrum(;
             pdb_file=pdb_file,
             traj_file=traj_file,
+            fs_file=fs_file,
             output_file=ds_file,
             lipids=lipids,
             L_grid=L_grid
