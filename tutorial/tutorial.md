@@ -18,7 +18,7 @@ It is useful to define a set of parameters that we will need for input arguments
 ```julia
 begin
   const pdb_file = "s.pdb"
-  conts traj_dir = "./"
+  const traj_dir = "./"
   const traj_name = "t"
   const traj_inds = 1:200
   const traj_ext = ".nc"
