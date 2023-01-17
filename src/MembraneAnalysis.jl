@@ -10,7 +10,8 @@ using DelimitedFiles
 using StatsBase
 using Distances
 
-export POPC_aa,
+export Lipid,
+       POPC_aa,
        Chol_aa,
        DMPC_aa,
        DOPC_aa,
