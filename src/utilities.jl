@@ -45,7 +45,7 @@ function atom_leaflet_dynamic(;
         for ind in indices
             x_index = Int(floor(coords[1, ind] * n_grid_x / Lx)) + 1
             y_index = Int(floor(coords[2, ind] * n_grid_y / Ly)) + 1
-            if atoms[ind].z > zs_m[x_index, y_index]
+            if coords[3, ind] > zs_m[x_index, y_index]
                 leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= 1
             else
                 leaflet_id[ind:(ind + lipid.n_atoms - 1)] .= -1

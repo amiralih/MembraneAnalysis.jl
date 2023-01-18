@@ -71,13 +71,13 @@ function fluctuation_spectrum(;
         coords = mod.(coords, box_dims)
 
         # fixing z values if tail atoms are not near the middle Z values
-
+        
         while std(coords[3, tail_atoms_inds]) > 15
             coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
         end
-
-        midplane = mean(coords[3, tail_atoms_inds])
         
+        midplane = mean(coords[3, tail_atoms_inds])
+        println(midplane)
         Δz = (Lz / 2) - midplane
         if abs(Δz) > 0.05 * Lz
             coords[3, :] = mod.(coords[3, :] .+ Δz, Lz)
