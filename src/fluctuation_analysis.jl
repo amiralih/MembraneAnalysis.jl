@@ -170,6 +170,9 @@ function fluctuation_spectrum(;
        
         # repeat analysis with dynamically determined lipid leaflet
         
+        ref_inds_1 = [i for i in ref_inds if leaflet_id[i] == 1]
+        ref_inds_2 = [i for i in ref_inds if leaflet_id[i] == -1]
+
         # find average z of cells for leaflet 1
 
         zs_1 = zeros(Float32, n_grid_x, n_grid_y)
