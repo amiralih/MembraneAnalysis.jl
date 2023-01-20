@@ -332,4 +332,47 @@ function get_index_pairs(N)
     return values, index_pairs
 end
 
+"""
+    find_ref_atoms(;
+        input_dir,
+        lipids,
+        z,
+        tolerance=2)
+
+Determines the nearest atom to a determined height (such as the neutral surface) for each lipid and returns a dictionary.
+
+### Keyword arguments
+
+* `input_dir`: directory with lipid atoms height files (e.g. `XXXX_zs.dat` for lipid "XXXX");
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `z`: refrence surface height;
+* `tolerance`: maximum distance from `z` accepted, will produce a warning if exceeded.
+
+"""
+function find_ref_atoms(;
+        input_dir,
+        lipids,
+        z,
+        tolerance=2
+)
+    ref_atoms = Dict()
+    tol_flag = false
+
+    for lipid in lipids
+        data = readdlm(input_dir * "$(lipid.name)_zs.dat")
+        zs = data[:, 2]
+        atoms = data[:, 1]
+
+        ref_atoms[lipid] = atoms[argmin(abs.(zs .- z))]
+        if minimum(abs.(zs .- z)) > tolerance
+            tol_flag = true
+        end
+    end
+
+    if tol_flag
+        @warn "Distance for some selected refrence atoms exceeds tolerance ($(tolerance))."
+    end
+
+    return ref_atoms
+end
 

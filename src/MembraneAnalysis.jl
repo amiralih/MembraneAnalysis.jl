@@ -27,7 +27,8 @@ export atom_leaflet,
        blocking_error,
        lipids_atoms_height,
        peptide_atoms_height,
-       get_index_pairs
+       get_index_pairs,
+       find_ref_atoms
 include("utilities.jl")
 
 export fluctuation_spectrum,

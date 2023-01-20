@@ -77,7 +77,7 @@ function fluctuation_spectrum(;
         end
         
         midplane = mean(coords[3, tail_atoms_inds])
-        println(midplane)
+        
         Δz = (Lz / 2) - midplane
         if abs(Δz) > 0.05 * Lz
             coords[3, :] = mod.(coords[3, :] .+ Δz, Lz)
