@@ -10,6 +10,7 @@ using DelimitedFiles
 using StatsBase
 using Distances
 using Plots
+using LaTeXStrings
 using LsqFit
 
 export Lipid,
@@ -41,7 +42,8 @@ export curvature,
        lipids_sampled_curvature,
        peptide_sampled_curvature,
        lipids_curvature_spectrum,
-       peptide_curvature_spectrum
+       peptide_curvature_spectrum,
+       TCB_analysis
 include("curvature_analysis.jl")
 
 export lipids_thickness_spectrum,

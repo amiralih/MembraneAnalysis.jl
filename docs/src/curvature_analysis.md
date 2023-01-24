@@ -20,3 +20,7 @@ lipids_curvature_spectrum
 peptide_curvature_spectrum
 ```
 
+```@docs
+TCB_analysis
+```
+

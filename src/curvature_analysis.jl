@@ -655,3 +655,106 @@ function peptide_curvature_spectrum(;
     return nothing
 end
 
+"""
+    TCB_analysis(;
+        input_dir,
+        lipids,
+        weights=ones(length(lipids)) ./ length(lipids),
+        z_cutoff,
+        area=readdlm(input_dir * "A.dat")[1],
+        output_dir,
+        tcb_plot=false)
+
+Calculates bilayer bending rigidity modulus and mean sampled curvature of lipids relative to a weighted average from transverse curvature bias analysis. Optionally plots mean sampled curvature of atoms of each lipid as a function of height.
+
+### Keyword arguments
+
+* `input_dir`: directory with lipid atoms height and curvature files (e.g. `XXXX_zs.dat` and `XXXX_cs.dat` for lipid "XXXX");
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `weights`: a list of the same size as `lipids`, determining the weight of each lipid's TCB curve in the analysis. (Should be equal to the fraction of bilayer area covered by that lipid. Will be equal by default.);
+* `z_cutoff`: cutoff height to exclude anomalous behavior near lipid head region;
+* `area`: bilayer area, will be read from `A.dat` in `input_dir` by default;
+* `output_dir`: output directory;
+* `tcb_plot`: saves a plot ("TCB_plot.pdf") in `output_dir` if `true`.
+
+"""
+function TCB_analysis(;
+    input_dir,
+    lipids,
+    weights=ones(length(lipids)) ./ length(lipids),
+    z_cutoff,
+    area=readdlm(input_dir * "A.dat")[1],
+    output_dir,
+    tcb_plot=false
+)
+    atoms_z = Dict()
+    atoms_c = Dict()
+    z = Dict()
+    c = Dict()
+    c_e = Dict()
+    
+    @. model(x, p) = p[1] + p[2] * x
+    p = Dict()
+
+    # plot  <c>(z) vs z
+    if tcb_plot
+        default(fontfamily="Computer Modern", framestyle=:box,
+                legend=:outerright, grid=false,
+                xlabel=L"z",
+                ylabel=L"\langle c \rangle(z-\delta)",
+                yformatter=:scientific)
+        plot()
+
+        hline!([0], lc=:black, label=false)
+    end
+
+    slope = 0.0
+    intercept = 0.0
+    
+    for (lipid, w) in zip(lipids, weights)
+        data = readdlm(input_dir * "$(lipid.name)_zs.dat")
+        z[lipid] = data[:, 2]
+        z_order = sortperm(z[lipid])
+
+        atoms_z[lipid] = data[:, 1]
+
+        data = readdlm(input_dir * "$(lipid.name)_cs.dat")
+        c[lipid] = data[:, 2]
+        c_e[lipid] = data[:, 3]
+
+        atoms_c[lipid] = data[:, 1]
+
+        @assert atoms_z[lipid] == atoms_c[lipid]
+
+        z[lipid] = z[lipid][z_order]
+        c[lipid] = c[lipid][z_order]
+        c_e[lipid] = c_e[lipid][z_order]
+
+        zs = z[lipid]
+        cs = c[lipid]
+        fit = curve_fit(model, zs[zs .< z_cutoff], cs[zs .< z_cutoff], [0.0, 0.0])
+        p[lipid] = coef(fit)
+
+        slope += w * p[lipid][2]
+        intercept += w * p[lipid][1]
+
+        if tcb_plot
+            scatter!(z[lipid], c[lipid], yerror=c_e[lipid],
+                     msc=:auto, label=lipid.name)
+        end
+    end
+
+    if tcb_plot
+    vline!([z_cutoff], lc=:black, ls=:dash, label=false)
+    savefig(output_dir * "TCB_plot.pdf")
+    end
+    
+    kc = -2 / (area * slope)
+
+    writedlm(output_dir * "kc.dat", [kc])
+    writedlm(output_dir * "delta_cs.dat",
+             [[lipid.name for lipid in lipids] [(p[lipid][1] - intercept) for lipid in lipids]])
+
+    return nothing
+end
+
