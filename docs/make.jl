@@ -9,7 +9,6 @@ makedocs(
              "Fluctuation Analysis" => "fluctuation_analysis.md",
              "Curvature Analysis" => "curvature_analysis.md",
              "Thickness Analysis" => "thickness_analysis.md",
-             "Tutorial" => "tutorial.md",
             ],
     format = Documenter.HTML(prettyurls = false)
 )
