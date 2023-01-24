@@ -675,7 +675,7 @@ Calculates bilayer bending rigidity modulus and mean sampled curvature of lipids
 * `z_cutoff`: cutoff height to exclude anomalous behavior near lipid head region;
 * `area`: bilayer area, will be read from `A.dat` in `input_dir` by default;
 * `output_dir`: output directory;
-* `tcb_plot`: saves a plot ("TCB_plot.pdf") in `output_dir` if `true`.
+* `tcb_plot`: saves a plot (`TCB_plot.pdf`) in `output_dir` if `true`.
 
 """
 function TCB_analysis(;
