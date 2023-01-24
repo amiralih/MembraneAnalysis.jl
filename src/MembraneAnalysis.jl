@@ -9,6 +9,8 @@ using HDF5
 using DelimitedFiles
 using StatsBase
 using Distances
+using Plots
+using LsqFit
 
 export Lipid,
        POPC_aa,
