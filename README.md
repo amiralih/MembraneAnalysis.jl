@@ -16,6 +16,10 @@ A package for analyzing molecular dynamics simulations of lipid membranes
 pkg> add MembraneAnalysis
 ```
 
+## Tutorial
+
+A tutorial demonstrating an example usage of the package can be found [here](https://github.com/amiralih/MembraneAnalysis.jl/blob/d72a933cb39a3beb5423224c4169a0f1494a5ec7/tutorial/tutorial.md).
+
 ## Contribution
 
 User feedback is appreciated. Please create a [GitHub Issue](https://github.com/amiralih/MembraneAnalysis.jl/issues) to report bugs or suggest new features, or a [Pull Request](https://github.com/amiralih/MembraneAnalysis.jl/pulls) to contribute to the package. 
