@@ -1,10 +1,10 @@
 """
     Lipid(
-    name,
-    head_atom,
-    ref_atom,
-    tail_atom,
-    n_atoms)
+        name,
+        head_atom,
+        ref_atom,
+        tail_atom,
+        n_atoms)
 
 A struct describing lipid species present in the system.
 
