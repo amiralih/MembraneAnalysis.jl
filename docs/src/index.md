@@ -8,7 +8,7 @@ Documentation for `MembraneAnalysis.jl`, a package for analyzing molecular dynam
 
 
 ```@contents
-pages = ["fluctuation_analysis.md",
+Pages = ["fluctuation_analysis.md",
          "curvature_analysis.md",
          "thickness_analysis.md",
          "lipids.md",
