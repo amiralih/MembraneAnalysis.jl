@@ -1,5 +1,25 @@
 """
-Calculates the lateral density spectrum of lipids in a lipid bilayer simulation trajectory and saves the output as a HDF5 file.
+    lipids_density_spectrum(;
+        pdb_file,
+        traj_file,
+        fs_file,
+        output_file,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        L_grid)
+
+Calculates lateral density (number per cell) spectrum of lipids in a lipid bilayer simulation trajectory and saves the results as a HDF5 file with labels `XXXX_1` and `XXXX_2` for lipid "XXXX" in the two leaflets.
+
+### Keyword arguments
+
+* `pdf_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `fs_file`: flucuation spectrum file;
+* `output_file`: output HDF5;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `L_grid`: length of the lattice grid used to discretize the surface.
+
 """
 function lipids_density_spectrum(; 
     pdb_file,
@@ -131,6 +151,29 @@ end
 """
 Calculates the lateral density spectrum of the peptide in a lipid bilayer simulation trajectory and saves the output as a HDF5 file.
 """
+"""
+    peptide_density_spectrum(;
+        pdb_file,
+        traj_file,
+        fs_file,
+        output_file,
+        lipids,
+        ref_residue,
+        L_grid)
+
+Calculates lateral density (number per cell) spectrum of the peptide using the CA atom of its reference residue and saves the results as a HDF5 file with labels `PEP_1` and `PEP_2` for the two leaflets.
+
+### Keyword arguments
+
+* `pdf_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `fs_file`: flucuation spectrum file;
+* `output_file`: output HDF5;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_residue`: residue number of the reference residue of the peptide;
+* `L_grid`: length of the lattice grid used to discretize the surface.
+
+"""
 function peptide_density_spectrum(; 
     pdb_file,
     traj_file,
@@ -243,7 +286,35 @@ function peptide_density_spectrum(;
 end
 
 """
+    lipids_radial_distribution(;
+        pdb_file,
+        traj_file,
+        fs_file,
+        output_file,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        lipid_A,
+        lipid_B,
+        max_r=20,
+        n_bins=200,
+        same_leaflet=true)
+
 Calculates the lateral (2-D) radial density function of lipid A and lipid B in a lipid bilayer simulation trajectory.
+
+### Keyword arguments
+
+* `pdf_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `fs_file`: flucuation spectrum file;
+* `output_file`: output file (density as a function of histogram bin center);
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `lipid_A`: the lipid distance is measured from;
+* `lipid_B`: the lipid distance is measured to;
+* `max_r`: maxumum radius (20 by default);
+* `n_bins`: number of histogram bins (200 by default);
+* `same_leaflet`: calculate RDF between lipids in the same leaflet (apposing leaflet if `false`).
+
 """
 function lipids_radial_distribution(; 
     pdb_file,
@@ -405,7 +476,35 @@ function lipids_radial_distribution(;
 end
 
 """
+    lipids_radial_distribution(;
+        pdb_file,
+        traj_file,
+        fs_file,
+        output_file,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        ref_residue,
+        lipid,
+        max_r=20,
+        n_bins=200,
+        same_leaflet=true)
+
 Calculates the lateral (2-D) radial density function of peptide and a lipid in a lipid bilayer simulation trajectory.
+
+### Keyword arguments
+
+* `pdf_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `fs_file`: flucuation spectrum file;
+* `output_file`: output file (density as a function of histogram bin center);
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `ref_residue`: residue number of the reference residue of the peptide;
+* `lipid`: the lipid distance is measured to;
+* `max_r`: maxumum radius (20 by default);
+* `n_bins`: number of histogram bins (200 by default);
+* `same_leaflet`: calculate RDF between lipids in the same leaflet (apposing leaflet if `false`).
+
 """
 function peptide_radial_distribution(; 
     pdb_file,

@@ -10,6 +10,7 @@ makedocs(
              "Curvature Analysis" => "curvature_analysis.md",
              "Thickness Analysis" => "thickness_analysis.md",
              "Lipids" => "lipids.md",
+             "Density Analysis" => "density_analysis.md",
             ],
     format = Documenter.HTML(prettyurls = false)
 )
