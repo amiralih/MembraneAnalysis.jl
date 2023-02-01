@@ -11,6 +11,7 @@ makedocs(
              "Thickness Analysis" => "thickness_analysis.md",
              "Lipids" => "lipids.md",
              "Density Analysis" => "density_analysis.md",
+             "Utilities" => "utilities.md",
             ],
     format = Documenter.HTML(prettyurls = false)
 )

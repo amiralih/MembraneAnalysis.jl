@@ -1,5 +1,15 @@
 """
+    atom_leaflet(;
+        pdb_file,
+        lipids)
+
 Determines the leaflet of each atom of the lipid in a bilayer based on vertical position of the head atoms in the PDB structure file. Outputs an array of ±1s.
+
+# Keyword arguments
+
+* `pdb_file`: PDB file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+
 """
 function atom_leaflet(;
         pdb_file,
@@ -24,7 +34,23 @@ function atom_leaflet(;
 end
 
 """
-Determines the leaflet of each atom of the lipid in a bilayer based on vertical position of the head atoms relative to the leaflet mean height. Outputs an array of ±1s.
+    atom_leaflet_dynamic(;
+        coords,
+        zs_m,
+        Ls,
+        pdb_file,
+        lipids)
+
+Dynamically determines the leaflet of each atom of the lipid in a bilayer based on vertical position of the head atoms in the trajectory coordinates. Outputs an array of ±1s.
+
+# Keyword arguments
+
+* `coords`: a 3 × N array of N atoms coordinates;
+* `zs_m`: bilayer midplane height;
+* `Ls`: a tuple of the (Lx, Ly) dimensions of the box;
+* `pdb_file`: PDB file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+
 """
 function atom_leaflet_dynamic(;
         coords,
@@ -57,7 +83,15 @@ function atom_leaflet_dynamic(;
 end
 
 """
-Finds the mean dimensions of the simulation box.
+    box_dimensions(;
+        traj_file)
+
+Calculates mean dimensions of the simulation box.
+
+# Keyword arguments
+
+* `traj_file`: trajectory file;
+
 """
 function box_dimensions(; traj_file)
     traj = Chemfiles.Trajectory(traj_file)
@@ -86,7 +120,10 @@ function box_dimensions(; traj_file)
 end
 
 """
-Finds the standard error of the mean for an array divided in n blocks.
+    blocking_error(a, n=10)
+
+Calculates standard error of the mean for an array `a` divided in `n` blocks.
+
 """
 function blocking_error(a, n=10)
     n_data = length(a)
@@ -106,7 +143,23 @@ function blocking_error(a, n=10)
 end
 
 """
-Calculates the average distance of each carbon atom of each lipid from the midplane.
+    lipids_atoms_height(;
+        pdb_file,
+        traj_file,
+        fs_file,
+        output_dir,
+        lipids)
+
+Calculates the average distance of heavy atoms of each lipid from the midplane. Results for lipid "XXXX" will be saved to `XXXX_zs.dat` in `output_dir`.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `fs_file`: fluctuation spectrum file;
+* `output_dir`: output directory;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`.
+
 """
 function lipids_atoms_height(;
     pdb_file,
@@ -211,7 +264,23 @@ function lipids_atoms_height(;
 end
 
 """
-Calculate average distance of CA atoms of each residue of the peptide from midplane.
+    peptide_atoms_height(;
+        pdb_file,
+        traj_file,
+        output_file,
+        lipids,
+        n_residues)
+
+Calculates average distance of CA atoms of each residue of peptide from the midplane.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `output_file`: output file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jli`;
+* `n_residues`: number of residues in the peptide.
+
 """
 function peptide_atoms_height(;
     pdb_file,
@@ -302,7 +371,10 @@ function peptide_atoms_height(;
 end
 
 """
-Find all (n, m) index pairs and corresponding v = √(n^2 + m^2) values where v ≤ N.
+    get_index_pairs(N)
+
+Calculates all (n, m) index pairs and corresponding v = √(n^2 + m^2) values where v ≤ `N`.
+
 """
 function get_index_pairs(N)
     all_values = []

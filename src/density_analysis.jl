@@ -149,9 +149,6 @@ function lipids_density_spectrum(;
 end
 
 """
-Calculates the lateral density spectrum of the peptide in a lipid bilayer simulation trajectory and saves the output as a HDF5 file.
-"""
-"""
     peptide_density_spectrum(;
         pdb_file,
         traj_file,
