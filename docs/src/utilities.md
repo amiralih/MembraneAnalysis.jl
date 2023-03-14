@@ -32,3 +32,7 @@ get_index_pairs
 find_ref_atoms
 ```
 
+```@docs
+voronoi_shells
+```
+

@@ -758,3 +758,147 @@ function TCB_analysis(;
     return nothing
 end
 
+"""
+    hq2_analysis(;
+        input_dir,
+        n_points=size(readdlm(input_dir * "hq2.dat"))[1],
+        area=readdlm(input_dir * "A.dat")[1],
+        model="TD",
+        output_dir,
+        hq2_plot=false)
+
+Calculates bilayer bending rigidity modulus by fitting |q|^4 × <|hq|^2> vs |q| data to the chosen model. Available models are "HC" (Helfrich-Canham), "MNK" (May-Narang-Kopelevich), or "TD" (Terzi-Deserno), as denoted by equations (36), (37), and (47) respectively in the following paper:
+
+https://doi.org/10.1063/1.4990404
+
+Saves the results to `kc_hq2.dat` in `output_dir` and optionally plots the fit.
+
+### Keyword arguments
+
+* `input_dir`: input directory containing `hq2.dat`;
+* `n_points`: number of |q| data points to use (uses all by default);
+* `model`: chosen theoretical model to fit <|hq|^2> vs |q|;
+* `area`: bilayer area, will be read from `A.dat` in `input_dir` by default;
+* `output_dir`: output directory;
+* `hq2_plot`: saves a plot (`hq2_plot.pdf`) in `output_dir` if `true`.
+
+"""
+function hq2_analysis(;
+    input_dir,
+    n_points=size(readdlm(input_dir * "hq2.dat"))[1],
+    area=readdlm(input_dir * "A.dat")[1],
+    model="TD",
+    output_dir,
+    hq2_plot=false
+)
+    
+    data = readdlm(input_dir * "hq2.dat")
+
+    q = data[:, 1]
+    hq2 = data[:, 2]
+    hq2e =data[:, 3]
+
+    x = q
+    y = hq2 .* (x.^4)
+    ye = hq2e .* (x.^4)
+
+    x = x[1:n_points]
+    y = y[1:n_points]
+    ye = ye[1:n_points]
+
+    @. model_HC(x, p) = p[1]
+    @. model_MNK(x, p) = p[1] + p[2] * x^2
+    @. model_TD(x, p) = (p[1] + p[2] * x^2) * (1 / (1 - x^2 / p[3]))
+
+    if model == "HC"
+        fit_m = curve_fit(model_HC, x, y, [1e3])
+    end
+    
+    if model == "MNK"
+        fit_m = curve_fit(model_MNK, x, y, [1e3, 1e5])
+    end
+    
+    if model == "TD"
+        fit_m = curve_fit(model_TD, x, y, [1e3, 1e5, 1e-1])
+    end
+
+    # finding error from parametric bootstrapping
+
+    N = 100
+    kc_values = Float64[]
+    fits = []
+
+    for i in 1:N
+        yy = y .+ ye .* randn(n_points)
+        
+        if model == "HC"
+            fit = curve_fit(model_HC, x, y, [1e3])
+        end
+        
+        if model == "MNK"
+            fit = curve_fit(model_MNK, x, y, [1e3, 1e5])
+        end
+        
+        if model == "TD"
+            fit = curve_fit(model_TD, x, y, [1e3, 1e5, 1e-1])
+        end
+
+        push!(kc_values, area / coef(fit)[1])
+        push!(fits, fit)
+    end
+
+    kc_e = std(kc_values)
+
+    # plot |q|^4 * <|hq|^2> vs |q|
+    
+    if hq2_plot
+
+        default(fontfamily="Computer Modern", framestyle=:box,
+                legend=false, grid=false,
+                xlabel=L"q",
+                ylabel=L"q^4 \langle |h_\mathbf{q}|^2 \rangle",
+                yformatter=:scientific)
+        plot()
+
+        scatter!(x, y, yerror=ye, markercolor=:black, markeralpha=0.75)
+
+        xx = x[1]:((x[end] - x[1]) / 100):x[end]
+
+        if model == "HC"
+            yy_m = model_HC.(xx, [coef(fit_m)])
+        end
+        
+        if model == "MNK"
+            yy_m = model_MNK.(xx, [coef(fit_m)])
+        end
+        
+        if model == "TD"
+            yy_m = model_TD.(xx, [coef(fit_m)])
+        end
+
+        for fit in fits
+            if model == "HC"
+                yyf = model_HC.(xx, [coef(fit)])
+            end
+            
+            if model == "MNK"
+                yyf = model_MNK.(xx, [coef(fit)])
+            end
+            
+            if model == "TD"
+                yyf = model_TD.(xx, [coef(fit)])
+            end
+            
+            plot!(xx, yyf, ls=:solid, lc=:red, linealpha=0.1)
+        end
+
+        plot!(xx, yy_m, ls=:dash, lc=:black)
+
+        savefig(output_dir * "hq2_plot.pdf")
+    
+    end
+
+    writedlm(output_dir * "kc_hq2.dat", [(area / coef(fit_m)[1]) kc_e])
+
+    return nothing
+end

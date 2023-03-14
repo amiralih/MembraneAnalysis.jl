@@ -317,3 +317,58 @@ function area_expansion_modulus(;
 
     return (KA_m, KA_e)
 end
+
+"""
+    fluctuation_hq2_data(;
+        box_dims,
+        fs_files,
+        output_file,
+        q_max)
+
+Calculates |hq|^2 vs |q| data from fluctuation spectrum. Assumes square (Lx = Ly) bilayer. Saves results to `hq2.dat` in `output_dir`.
+
+### Keyword arguments
+
+* `box_dims`: ordered pair of lateral simulation box dimensions, Lx and Ly;
+* `fs_files`: a list of HDF5 fluctuation spectrum files;
+* `output_dir`: output directory;
+* `q_max`: maximum q mode magnitude value to be used.
+
+"""
+function fluctuation_hq2_data(;
+	box_dims,
+	fs_files,
+	output_dir,
+    q_max
+)
+	# find |q| values (up to q_max) and corresponing indices
+
+	(L, _) = box_dims
+
+	# including at least 9 q values (for N = 4) even if greater than q_max
+
+	N = max(Int(floor(q_max / (2π / L))), 4)
+	values, index_pairs = get_index_pairs(N)
+	qs = values * (2π / L)
+
+	# make lists of |hq|^2 values (for each |q|) of all frames
+
+	hq2s = zeros(length(qs) - 1)
+	hq2es = zeros(length(qs) - 1)
+
+	for q_i in 2:length(qs)
+		hq2 = Float64[]
+		for ind_pair in index_pairs[q_i]
+	    		for fs_file in fs_files
+				append!(hq2, (abs.(h5read(fs_file, "hq")[:,  (ind_pair .+ 1)...])).^2)
+			end
+		end
+		
+		hq2s[q_i - 1] = mean(hq2)
+		hq2es[q_i - 1] = blocking_error(hq2)
+	end
+
+	writedlm(output_dir * "hq2.dat", [qs[2:end] hq2s hq2es])
+
+	return nothing
+end

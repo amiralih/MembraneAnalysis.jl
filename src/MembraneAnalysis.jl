@@ -31,11 +31,13 @@ export atom_leaflet,
        lipids_atoms_height,
        peptide_atoms_height,
        get_index_pairs,
-       find_ref_atoms
+       find_ref_atoms,
+       voronoi_shells
 include("utilities.jl")
 
 export fluctuation_spectrum,
-       area_expansion_modulus
+       area_expansion_modulus,
+       fluctuation_hq2_data
 include("fluctuation_analysis.jl")
 
 export curvature,
@@ -43,7 +45,8 @@ export curvature,
        peptide_sampled_curvature,
        lipids_curvature_spectrum,
        peptide_curvature_spectrum,
-       TCB_analysis
+       TCB_analysis,
+       hq2_analysis
 include("curvature_analysis.jl")
 
 export lipids_thickness_spectrum,

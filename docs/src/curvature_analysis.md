@@ -24,3 +24,7 @@ peptide_curvature_spectrum
 TCB_analysis
 ```
 
+```@docs
+hq2_analysis
+```
+

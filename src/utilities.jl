@@ -91,9 +91,11 @@ Calculates mean dimensions of the simulation box.
 # Keyword arguments
 
 * `traj_file`: trajectory file;
+* `area_file`: save area if not empty;
+* `box_dims_file`: save simulation box dimensions if not empty;
 
 """
-function box_dimensions(; traj_file)
+function box_dimensions(; traj_file, area_file="", box_dims_file="")
     traj = Chemfiles.Trajectory(traj_file)
     n_frames = Int(Chemfiles.size(traj))
     
@@ -115,6 +117,14 @@ function box_dimensions(; traj_file)
     Lx = mean(Lxs)
     Ly = mean(Lys)
     Lz = mean(Lzs)
+
+    if area_file != ""
+        writedlm(area_file, [Lx * Ly])
+    end
+
+    if box_dims_file != ""
+        writedlm(box_dims_file, [Lx Ly Lz])
+    end
 
     return (Lx, Ly, Lz)
 end
@@ -448,3 +458,151 @@ function find_ref_atoms(;
     return ref_atoms
 end
 
+"""
+    voronoi_shells(;
+        points,
+        box_dims,
+        center,
+        n_shells)
+
+Determines the voronoi shells around a center point from a set of 2-D points (not including the center). Returns a dictionary with a list of point indices for each shell.
+
+### Keyword arguments
+
+* `points`: a 2×N array of X and Y coordinates of the N points;
+* `box_dims`: a tuple of simulation box lateral dimensions, Lx and Ly;
+* `cetner`: coordinates of the center point;
+* `n_shells`: number of voronoi shells to be determined.
+
+"""
+function voronoi_shells(; points, box_dims, center, n_shells)
+
+    (Lx, Ly) = box_dims
+
+    # center and fix PBC
+
+    Δx = (Lx / 2) - center[1]
+    Δy = (Ly / 2) - center[2]
+
+    ps = copy(points)
+
+    ps[1, :] = mod.(points[1, :] .+ Δx, Lx)
+    ps[2, :] = mod.(points[2, :] .+ Δy, Ly)
+
+    # find shells
+
+    shells = Dict()
+
+    for k in 1:n_shells
+        shells[k] = Int[]
+    end
+
+    n_ps = size(ps)[2]
+
+    p_inds = repeat([true], n_ps)
+    
+    # for first shell
+
+    (x0, y0) = (Lx / 2, Ly / 2)
+
+    # for each point i
+
+    for i in 1:n_ps
+
+        x1 = ps[1, i]
+        y1 = ps[2, i]
+        
+        xm = (x0 + x1) / 2
+        ym = (y0 + y1) / 2
+
+        d = peuclidean([x0, y0], [xm, ym], [Lx, Ly])
+        
+        # check if any point is closer to the midpoint of center and point i
+        # (i.e., if voronoi cell of point i is adjacent to voronoi cell of center)
+
+        flag = true
+        
+        for j in 1:n_ps
+            if j == i continue end
+
+            x2 = ps[1, j]
+            y2 = ps[2, j]
+
+            if peuclidean([xm, ym], [x2, y2], [Lx, Ly]) < d
+                flag = false
+                break
+            end
+        end
+
+        if flag push!(shells[1], i) end
+    end
+
+    p_inds[shells[1]] .= false
+
+    # for all other shells
+
+    for k in 2:n_shells
+
+        # for each point i
+
+        for i in (1:n_ps)[p_inds]
+
+            x1 = ps[1, i]
+            y1 = ps[2, i]
+
+            # find the closest point to i in the previous shell
+
+            i_pre = shells[k - 1][1]
+            
+            x0 = ps[1, i_pre]
+            y0 = ps[2, i_pre]
+            
+            d_pre = peuclidean([x0, y0], [x1, y1], [Lx, Ly])
+
+            for j_pre in shells[k - 1]
+                
+                x0 = ps[1, j_pre]
+                y0 = ps[2, j_pre]
+
+                if peuclidean([x0, y0], [x1, y1], [Lx, Ly]) < d_pre
+                    
+                    i_pre = j_pre
+                    d_pre = peuclidean([x0, y0], [x1, y1], [Lx, Ly])
+                end
+            end
+            
+            x0 = ps[1, i_pre]
+            y0 = ps[2, i_pre]
+
+            # check if the midpoint of i and i_pre is closer to any other free point
+            # (i.e., if voronoi cell of point i is adjacent to voronoi cell of i_pre)
+            
+            xm = (x0 + x1) / 2
+            ym = (y0 + y1) / 2
+
+            d = peuclidean([x0, y0], [xm, ym], [Lx, Ly])
+
+            flag = true
+            
+            for j in (1:n_ps)[p_inds]
+                if j == i continue end
+
+                x2 = ps[1, j]
+                y2 = ps[2, j]
+
+                if peuclidean([xm, ym], [x2, y2], [Lx, Ly]) < d
+                    flag = false
+                    break
+                end
+            end
+
+            if flag push!(shells[k], i) end
+        end
+
+        p_inds[shells[k]] .= false
+    
+    end
+
+    return shells
+
+end
