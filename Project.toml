@@ -1,7 +1,7 @@
 name = "MembraneAnalysis"
 uuid = "860fb56a-4bc2-4ee4-bb83-0a542106da62"
 authors = ["Amirali Hossein <amirali.hossein@gmail.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Chemfiles = "46823bd8-5fb3-5f92-9aa0-96921f3dd015"
