@@ -3,7 +3,8 @@
         point,
         hq,
         box_dims,
-        q_max)
+        q_max,
+        q_min=0)
 
 Calculates curvature per mode of a point from fluctuation spectrum.
 
@@ -13,13 +14,15 @@ Calculates curvature per mode of a point from fluctuation spectrum.
 * `hq`: 2D matrix of height fluctuation spectrum;
 * `box_dims`: ordered pair of simulation box Lx and Ly values;
 * `q_max`: maximum q mode magnitude value to be used.
+* `q_min`: minimum q mode magnitude value to be used (zero by default).
 
 """
 function curvature(;
     point,
     hq,
     box_dims,
-    q_max
+    q_max,
+    q_min=0
 )
     Lx, Ly = box_dims
 
@@ -38,15 +41,15 @@ function curvature(;
         
         x_ind, y_ind = mod1.((i, j) .+ 1, (n_grid_x, n_grid_y))
         
-        if (qx^2 + qy^2) < q_max^2
+        if q_min^2 < (qx^2 + qy^2) < q_max^2
             c += (1 / (Lx * Ly)) * hq[x_ind, y_ind] * (qx^2 + qy^2) * exp(im * (qx * point[1] + qy * point[2]))
             n_dof += 1
         end
     end
 
-    # number of modes (-1 to exclude (0, 0) from count) is half of the number of degrees of freedom
+    # number of modes is half of the number of degrees of freedom
     
-    n_modes = (n_dof - 1) / 2
+    n_modes = n_dof / 2
     c_per_mode = real(c) / n_modes
 
     return  c_per_mode
@@ -59,7 +62,8 @@ end
         fs_files,
         output_dir,
         lipids,
-        q_max)
+        q_max,
+        q_min=0)
 
 Calculates mean sampled curvature of heavy atoms of each lipid. Results for lipid "XXXX" will be stored in `XXXX_cs.dat` in the output directory.
 
@@ -71,6 +75,7 @@ Calculates mean sampled curvature of heavy atoms of each lipid. Results for lipi
 * `output_dir`: output directory;
 * `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
 * `q_max`: maximum q mode magnitude value to be used.
+* `q_min`: minimum q mode magnitude value to be used (zero bu default).
 
 """
 function lipids_sampled_curvature(;
@@ -79,7 +84,8 @@ function lipids_sampled_curvature(;
     fs_files,
     output_dir,
     lipids,
-    q_max
+    q_max,
+    q_min=0
 )
 
     # finding indices of tail atoms
@@ -173,12 +179,14 @@ function lipids_sampled_curvature(;
                     for index in C_inds_1
                         push!(cs_frame[lipid.name][C], curvature(point=coords[1:2, index],
                                                                  hq=hq[frame_index,:,:],
-                                                                 box_dims=(Lx, Ly), q_max=q_max))
+                                                                 box_dims=(Lx, Ly),
+                                                                 q_max=q_max, q_min=q_min))
                     end
                     for index in C_inds_2
                         push!(cs_frame[lipid.name][C], -curvature(point=coords[1:2, index],
                                                                   hq=hq[frame_index,:,:],
-                                                                  box_dims=(Lx, Ly), q_max=q_max))
+                                                                  box_dims=(Lx, Ly),
+                                                                  q_max=q_max, q_min=q_min))
                     end
                 end
             end
