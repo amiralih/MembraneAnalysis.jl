@@ -757,9 +757,12 @@ function TCB_analysis(;
     savefig(output_dir * "TCB_plot.pdf")
     end
     
+    neutral_surface = -(intercept / slope)
+
     kc = -2 / (area * slope)
 
     writedlm(output_dir * "kc.dat", [kc])
+    writedlm(output_dir * "NS.dat", [neutral_surface])
     writedlm(output_dir * "delta_cs.dat",
              [[lipid.name for lipid in lipids] [(p[lipid][1] - intercept) for lipid in lipids]])
 
