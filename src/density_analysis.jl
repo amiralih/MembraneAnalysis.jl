@@ -473,7 +473,7 @@ function lipids_radial_distribution(;
 end
 
 """
-    lipids_radial_distribution(;
+    peptide_radial_distribution(;
         pdb_file,
         traj_file,
         fs_file,
