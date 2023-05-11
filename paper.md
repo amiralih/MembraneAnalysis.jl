@@ -30,6 +30,10 @@ Biological membranes separate living cells from their surrounding, and, in case 
 
 `MembraneAnalysis.jl` is designed to be used by biophysical researchers in need of a fast analysis tool that can be easily built upon to enable implementation of new computational methods to guide theoretical descriptions of membrane physics.
 
+# State of the field
+
+There are quite a few software programs and packages developed for processing molecular dynamics simulations of lipid membranes, which can perform a number of analyses. Tools such as GridMAT-MD [allen2009gridmat],
+
 # Acknowledgements
 
 This project was supported by the Intramural Research Program (IRP) of the Eunice Kennedy Shriver National Institute of Child Health and Human Development (NICHD) at the National Institutes of Health (NIH).
