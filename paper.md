@@ -30,9 +30,15 @@ Biological membranes separate living cells from their surrounding, and, in case 
 
 `MembraneAnalysis.jl` is designed to be used by biophysical researchers in need of a fast analysis tool that can be easily built upon to enable implementation of new computational methods to guide theoretical descriptions of membrane physics.
 
+Some of the features of `MembraneAnalysis.jl` includes:
+
+- A
+- B
+- C
+
 # State of the field
 
-There are quite a few software programs and packages developed for processing molecular dynamics simulations of lipid membranes, which can perform a number of analyses. Tools such as GridMAT-MD [allen2009gridmat],
+There are quite a few software programs and packages developed for processing molecular dynamics simulations of lipid membranes, which can perform a number of analyses. Tools such as GridMAT-MD [@allen2009gridmat], APL@ Voro [@lukat2013apl], MEMBPlugin [@guixa2014membplugin], FATSLiM [@buchoux2017fatslim], MemSurfer [@bhatia2019memsurfer], and LiPyphilic [@smith2021lipyphilic] calculated properties like membrane thickness, area-per-lipid, and order parameter. [MembraneCurvature](https://github.com/MDAnalysis/membrane-curvature) is an [MDAnalysis](https://www.mdanalysis.org/) tool to calculate membrane curvature. What sets `MembraneAnalysis.jl` apart from these tools is the 
 
 # Acknowledgements
 
