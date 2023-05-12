@@ -18,7 +18,7 @@ pkg> add MembraneAnalysis
 
 ## Tutorial
 
-A tutorial demonstrating an example usage of the package can be found [here](https://github.com/amiralih/MembraneAnalysis.jl/blob/d72a933cb39a3beb5423224c4169a0f1494a5ec7/tutorial/tutorial.md).
+A tutorial demonstrating an example usage of the package can be found [here](tutorial/tutorial.md).
 
 ## Contribution
 
