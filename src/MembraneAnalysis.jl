@@ -59,4 +59,7 @@ export lipids_density_spectrum,
        peptide_radial_distribution
 include("density_analysis.jl")
 
+export count_interactions
+include("interactions.jl")
+
 end # module
