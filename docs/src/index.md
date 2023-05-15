@@ -13,6 +13,7 @@ Pages = ["fluctuation_analysis.md",
          "thickness_analysis.md",
          "lipids.md",
          "density_analysis.md",
+         "interactions.md",
          "utilities.md"]
 ```
 
