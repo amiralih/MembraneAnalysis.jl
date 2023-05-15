@@ -30,15 +30,17 @@ Biological membranes separate living cells from their surrounding, and, in case 
 
 `MembraneAnalysis.jl` is designed to be used by biophysical researchers in need of a fast analysis tool that can be easily built upon to enable implementation of new computational methods to guide theoretical descriptions of membrane physics.
 
-Some of the features of `MembraneAnalysis.jl` includes:
+Some of the membrane properties that `MembraneAnalysis.jl` can determine include:
 
-- A
-- B
-- C
+- Bending modulus of the membrane via multiple fluctuation-based approaches
+- Area expansion modulus of the membrane
+- Relative spontanous curvature of the lipid species
+- Nuetral surface of the membrane
+- Relative thickness preference of the lipid species
 
 # State of the field
 
-There are quite a few software programs and packages developed for processing molecular dynamics simulations of lipid membranes, which can perform a number of analyses. Tools such as GridMAT-MD [@allen2009gridmat], APL@ Voro [@lukat2013apl], MEMBPlugin [@guixa2014membplugin], FATSLiM [@buchoux2017fatslim], MemSurfer [@bhatia2019memsurfer], and LiPyphilic [@smith2021lipyphilic] calculated properties like membrane thickness, area-per-lipid, and order parameter. [MembraneCurvature](https://github.com/MDAnalysis/membrane-curvature) is an [MDAnalysis](https://www.mdanalysis.org/) tool to calculate membrane curvature. What sets `MembraneAnalysis.jl` apart from these tools is the 
+There are quite a few software programs and packages developed for processing molecular dynamics simulations of lipid membranes, which can perform a number of analyses. Tools such as GridMAT-MD [@allen2009gridmat], APL@ Voro [@lukat2013apl], MEMBPlugin [@guixa2014membplugin], FATSLiM [@buchoux2017fatslim], MemSurfer [@bhatia2019memsurfer], and LiPyphilic [@smith2021lipyphilic] calculated properties like membrane thickness, area-per-lipid, and order parameter. [MembraneCurvature](https://github.com/MDAnalysis/membrane-curvature) is an [MDAnalysis](https://www.mdanalysis.org/) tool to calculate membrane curvature. What sets `MembraneAnalysis.jl` apart from these tools is providing functionality to calculate various additional physical properties of interest, such as those  describing intrinsic curvature and thickness preferences of the different lipid types present in the membrane, and, the moduli characterizing the elastic properties of the membrane. These quantities are crucial in understanding any biological process that involves reshaping of the membrane.
 
 # Acknowledgements
 
