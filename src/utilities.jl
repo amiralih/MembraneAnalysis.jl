@@ -84,7 +84,9 @@ end
 
 """
     box_dimensions(;
-        traj_file)
+        traj_file,
+        area_file="",
+        box_dims_file="")
 
 Calculates mean dimensions of the simulation box.
 

@@ -322,7 +322,7 @@ end
     fluctuation_hq2_data(;
         box_dims,
         fs_files,
-        output_file,
+        output_dir,
         q_max)
 
 Calculates |hq|^2 vs |q| data from fluctuation spectrum. Assumes square (Lx = Ly) bilayer. Saves results to `hq2.dat` in `output_dir`.
