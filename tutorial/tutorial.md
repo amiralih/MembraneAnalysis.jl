@@ -65,6 +65,8 @@ area_expansion_modulus(;
 )
 ```
 
+We can find the calculated value of $\approx 0.7 \frac{k_{\mathrm{B}}T}{\mathrm{Å}^2}$ for area expansion modulus of the membrane in `KA.dat`.
+
 ## Calculating mean height from midplane of the heavy atoms of the lipids
 
 We use the first trajecotry to calculate the average height of the heavy atoms of the lipids using `lipids_atoms_heights` method which will save them to `XXXX_zs.dat` files in the specified output directory (where "XXXX" is the name of the lipid).
@@ -117,6 +119,8 @@ TCB_analysis(;
 <p align="center">
 <img src="https://github.com/amiralih/MembraneAnalysis.jl/blob/13e6a3dc86be379ad39753cf3d9dfe4effc3c919/tutorial/TCB_DOPC_10.png" width="500">
 </p>
+
+We can find the calculated value of $\approx 20 k_{\mathrm{B}}T$ for bending modulus of the membrane in `kc.dat`.
 
 ## References
 <a id="1">[1]</a> 
