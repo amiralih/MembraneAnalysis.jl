@@ -1,6 +1,6 @@
 # Example usage of `MembraneAnalysis.jl`
 
-In this tutorial we showcase some of the main functionality of the package by analyzing an atomistic simulations of a membrane containing DOPC lipids and %10 mol fraction cholesterol. `MembraneAnalysis.jl` needs a PDF structure file (here `s.pdb`) and trajectory files of any format supported by `Chemfiles.jl` (here `t1.nc` to `t100.nc`). The files needed for this tutorial can be found [here](https://doi.org/10.5281/zenodo.7908906).
+In this tutorial we showcase some of the main functionality of the package by analyzing an atomistic simulations of a membrane containing DOPC lipids and %10 mol fraction cholesterol. `MembraneAnalysis.jl` needs a PDB structure file (here `s.pdb`) and trajectory files of any format supported by `Chemfiles.jl` (here `t1.dcd` to `t10.dcd`). The files needed for this tutorial can be found [here](https://doi.org/10.5281/zenodo.8007968). To reproduce the analysis in this tutorial, first unzip the compressed folder and navigate into it, and then run the following Julia code snippets in order.
 
 ## Setting analysis parameters
 
@@ -22,8 +22,8 @@ begin
   const pdb_file = "s.pdb"
   const traj_dir = "./"
   const traj_name = "t"
-  const traj_inds = 1:100
-  const traj_ext = ".nc"
+  const traj_inds = 1:10
+  const traj_ext = ".dcd"
   const lipids = [DOPC_aa, Chol_aa]
   const L_grid = 15
   const q_max = 0.08
@@ -52,6 +52,18 @@ end
 ```
 
 ## Calculating area expansion modulus
+
+`box_dimensions` calculates the area and stores it in a file.
+
+```julia
+traj_file = traj_dir * traj_name * string(first(traj_inds)) * traj_ext
+output_file = output_dir * "KA.dat"
+
+box_dimensions(;
+    traj_file=traj_file,
+    area_file=output_dir * "A.dat"
+)
+```
 
 `area_expansion_modulus` calculates area expansion modulus from area fluctuations and stores them in a file.
 
@@ -89,7 +101,7 @@ lipids_atoms_height(;
 We calculate the average sampled curvature of the heavy atoms of the lipids using `lipids_sampled_curvature` method which will save them to `XXXX_cs.dat` files in the specified output directory (where "XXXX" is the name of the lipid).
 
 ```julia
-traj_files = [traj_dir * traj_name * string(i) * traj_ext for i in traj_id]
+traj_files = [traj_dir * traj_name * string(i) * traj_ext for i in traj_inds]
 fs_files = [output_dir * "fs_$(i).h5" for i in traj_inds]
 
 lipids_sampled_curvature(;
@@ -113,6 +125,7 @@ TCB_analysis(;
     weights=[0.9, 0.1],
     z_cutoff=14,
     output_dir=output_dir,
+    tcb_plot=true,
 )
 ```
 
