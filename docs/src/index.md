@@ -12,10 +12,21 @@ Some of the membrane properties that `MembraneAnalysis.jl` can determine include
 - Nuetral surface of the membrane
 - Relative thickness preference of the lipid species
 
-!!! note
+!!! note "Basic Tutorial"
 
     A tutorial demonstrating an example usage of the package can be found [here](https://github.com/amiralih/MembraneAnalysis.jl/blob/main/tutorial/tutorial.md).
 
+!!! tip "Input Data Organization"
+
+    The files used as input data by the functions in this package include (a subset of):
+    
+    1. a PDB structure file of the membrane simulation
+    2. a trajectory file of the membrane simulation (of any format supported by the `Chemfiles.jl` package), or a list of multiple trajectory files
+    3. files containing intermediate values generated as output by other functions in the package (either plain text files with the `.dat` extension, or HDF5 binary data files with `.h5` extension)
+    
+    We recommend placing the structure file and trajectory file(s) in same directory where the code is run from, and store the generated output files in the same folder as well.
+
+    If you have multiple trajectory files representing consecutive segments of a simulation, make sure that your input list of trajectory files is in the correct order if you wish to use the error estimates for the output values that are calculated using the blocking method ([3](https://link.springer.com/chapter/10.1007/BFb0105461)).
 
 ```@contents
 Pages = ["fluctuation_analysis.md",
