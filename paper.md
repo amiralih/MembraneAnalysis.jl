@@ -22,7 +22,7 @@ bibliography: paper.bib
 
 # Summary
 
-Biological membranes separate living cells from their surrounding, and, in case of eukaryotes, partition the cell into its constituent organelles. These bilayer structures, which consist of hundreds of different lipid species and associated proteins, play a central role in a variety of vital biological processes. Molecular dynamics (MD) simulations are a potent tool, used in conjunction with theoretical modeling and experimental studies, to investigate the physical and chemical properties of biomembranes. A crucial step in leveraging the power of MD in biophysics is analyzing the data produced by simulations in order to extract equilibrium and dynamic quantities of interest, which will inform and validate our theoretical models and help interpret experimental results. Availability of computationally efficient, flexible, and extensible software facilitates researchers in this endeavor.
+Biological membranes separate living cells from their surroundings, and, in case of eukaryotes, partition the cell into its constituent organelles. These bilayer structures, which consist of hundreds of different lipid species and associated proteins, play a central role in a variety of vital biological processes. Molecular dynamics (MD) simulations are a potent tool, used in conjunction with theoretical modeling and experimental studies, to investigate the physical and chemical properties of biomembranes. A crucial step in leveraging the power of MD in biophysics is analyzing the data produced by simulations in order to extract equilibrium and dynamic quantities of interest, which will inform and validate our theoretical models and help interpret experimental results. Availability of computationally efficient, flexible, and extensible software facilitates researchers in this endeavor.
 
 # Statement of need
 
@@ -35,12 +35,12 @@ Some of the membrane properties that `MembraneAnalysis.jl` can determine include
 - Bending modulus of the membrane via multiple fluctuation-based approaches
 - Area expansion modulus of the membrane
 - Relative spontanous curvature of the lipid species
-- Nuetral surface of the membrane
+- Neutral surface of the membrane
 - Relative thickness preference of the lipid species
 
 # State of the field
 
-There are quite a few software programs and packages developed for processing molecular dynamics simulations of lipid membranes, which can perform a number of analyses. Tools such as GridMAT-MD [@allen2009gridmat], APL@ Voro [@lukat2013apl], MEMBPlugin [@guixa2014membplugin], FATSLiM [@buchoux2017fatslim], MemSurfer [@bhatia2019memsurfer], and LiPyphilic [@smith2021lipyphilic] calculated properties like membrane thickness, area-per-lipid, and order parameter. [MembraneCurvature](https://github.com/MDAnalysis/membrane-curvature) is an [MDAnalysis](https://www.mdanalysis.org/) tool to calculate membrane curvature. What sets `MembraneAnalysis.jl` apart from these tools is providing functionality to calculate various additional physical properties of interest, such as those  describing intrinsic curvature and thickness preferences of the different lipid types present in the membrane, and, the moduli characterizing the elastic properties of the membrane. These quantities are crucial in understanding any biological process that involves reshaping of the membrane.
+There are quite a few software programs and packages developed for processing molecular dynamics simulations of lipid membranes, which can perform a number of analyses. Tools such as GridMAT-MD [@allen2009gridmat], APL@ Voro [@lukat2013apl], MEMBPlugin [@guixa2014membplugin], FATSLiM [@buchoux2017fatslim], MemSurfer [@bhatia2019memsurfer], and LiPyphilic [@smith2021lipyphilic] calculated properties like membrane thickness, area-per-lipid, and order parameter. [MembraneCurvature](https://github.com/MDAnalysis/membrane-curvature) is an [MDAnalysis](https://www.mdanalysis.org/) tool to calculate membrane curvature. What sets `MembraneAnalysis.jl` apart from these tools is providing functionality to calculate various additional physical properties of interest, such as those  describing intrinsic curvature and thickness preferences of the different lipid types present in the membrane, and the moduli characterizing the elastic properties of the membrane. These quantities are crucial in understanding any biological process that involves reshaping of the membrane.
 
 # Acknowledgements
 
