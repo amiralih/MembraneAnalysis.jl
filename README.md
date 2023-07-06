@@ -7,6 +7,7 @@ A package for analyzing molecular dynamics simulations of lipid membranes
 
 [![](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/amiralih/MembraneAnalysis.jl/actions/workflows/tests.yml/)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://amiralih.github.io/MembraneAnalysis.jl/dev)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.05380/status.svg)](https://doi.org/10.21105/joss.05380)
 
 ## Installation
 
