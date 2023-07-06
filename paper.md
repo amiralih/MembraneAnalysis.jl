@@ -13,7 +13,7 @@ authors:
     orcid: 0000-0002-5570-8212
     affiliation: 1
 affiliations:
- - name: Eunice Kennedy Shriver National Institute of Child Health and Human Development, Bethesda, MD 20892, United States
+ - name: Eunice Kennedy Shriver National Institute of Child Health and Human Development, Bethesda, MD, United States of America
    index: 1
 date: 1 December 2022
 bibliography: paper.bib
@@ -34,7 +34,7 @@ Some of the membrane properties that `MembraneAnalysis.jl` can determine include
 
 - Bending modulus of the membrane via multiple fluctuation-based approaches
 - Area expansion modulus of the membrane
-- Relative spontanous curvature of the lipid species
+- Relative spontaneous curvature of the lipid species
 - Neutral surface of the membrane
 - Relative thickness preference of the lipid species
 
