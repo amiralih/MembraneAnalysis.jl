@@ -84,7 +84,7 @@ function lipids_density_spectrum(;
 
         # fixing z values if tail atoms are not near the middle Z values
 
-        while std(coords[3, tail_atoms_inds]) > 15
+        while std(coords[3, tail_atoms_inds]) > 20
             coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
         end
 
@@ -227,7 +227,7 @@ function peptide_density_spectrum(;
 
         # fixing z values if tail atoms are not near the middle Z values
 
-        while std(coords[3, tail_atoms_inds]) > 15
+        while std(coords[3, tail_atoms_inds]) > 20
             coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
         end
 
@@ -386,7 +386,7 @@ function lipids_radial_distribution(;
 
         # fixing z values if tail atoms are not near the middle Z values
 
-        while std(coords[3, tail_atoms_inds]) > 15
+        while std(coords[3, tail_atoms_inds]) > 20
             coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
         end
 
@@ -572,7 +572,7 @@ function peptide_radial_distribution(;
 
         # fixing z values if tail atoms are not near the middle Z values
 
-        while std(coords[3, tail_atoms_inds]) > 15
+        while std(coords[3, tail_atoms_inds]) > 20
             coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
         end
 

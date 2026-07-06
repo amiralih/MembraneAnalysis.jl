@@ -142,7 +142,9 @@ function blocking_error(a, n=10)
     n_in_block = floor(Int, n_data / n)
     
     if n_in_block < 1
-        error("too few ($(n_data)) data points for $(n) blocks")
+        #error("too few ($(n_data)) data points for $(n) blocks")
+        print("too few ($(n_data)) data points for $(n) blocks")
+        return std(a) / √(n_data)
     else
         a_blocked = zeros(eltype(a), n)
         
@@ -192,7 +194,7 @@ function lipids_atoms_height(;
     lipid_Cs = Dict()
 
     for lipid in lipids
-        lipid_Cs[lipid.name] = unique([a.name for a in atoms if a.resname == lipid.name && a.name[1] in ['C', 'D', 'G']])
+        lipid_Cs[lipid.name] = unique([a.name for a in atoms if a.resname == lipid.name && a.name[1] in ['C', 'D', 'G', 'X']])
     end
     
     # creating dictionary of vectors to record z values
@@ -229,7 +231,7 @@ function lipids_atoms_height(;
 
         # fixing z values if tail atoms are not near the middle Z values
 
-        while std(coords[3, tail_atoms_inds]) > 15
+        while std(coords[3, tail_atoms_inds]) > 20
             coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
         end
 
@@ -339,7 +341,7 @@ function peptide_atoms_height(;
 
             # fixing z values if tail atoms are not near the middle Z values
 
-            while std(coords[3, tail_atoms_inds]) > 15
+            while std(coords[3, tail_atoms_inds]) > 20
                 coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
             end
 
@@ -357,7 +359,7 @@ function peptide_atoms_height(;
             
                 # finding indices of CA atoms of this residue in each leaflet
 
-                inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.resnum == i && a.name == "CA"]
+                inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == i && (a.name == "CA" || a.name == "BB")]
                 inds_1 = [j for j in inds if atoms[j].z > 0.0]
                 inds_2 = [j for j in inds if atoms[j].z < 0.0]
 
@@ -378,6 +380,107 @@ function peptide_atoms_height(;
     end
     
     writedlm(output_file, [1:n_residues output_zs output_zes])
+    
+    return nothing
+end
+
+"""
+    syt7_angle(;
+        pdb_file,
+        traj_file,
+        output_file,
+        lipids,
+        res1,
+        res2)
+
+Calculates average angle of SYT7 C2A or C2B domain with the X axis.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `output_file`: output file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jli`;
+* `res1`: first residue;
+* `res2`: second residue.
+
+"""
+function syt7_angle(;
+    pdb_file,
+    traj_files,
+    output_file,
+    lipids,
+    res1,
+    res2
+)
+
+    # finding indices tail atoms
+
+    atoms = PDBTools.readPDB(pdb_file)
+
+    tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
+    
+    # creating a list to record angle values
+    
+    angs = Float64[]
+    
+    # finding indices of CA atoms of the two residues
+
+    ind1 = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == res1 && a.name == "CA"][1]
+    ind2 = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == res2 && a.name == "CA"][1]
+    
+    for traj_file in traj_files
+            
+        # opening trajectory
+
+        traj = Chemfiles.Trajectory(traj_file)
+        n_frames = Int(Chemfiles.size(traj))
+
+        println("Finding orientation angle of peptide for trajectory file $(traj_file)")
+        @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
+            
+            # read a frame
+
+            frame = Chemfiles.read_step(traj, frame_index - 1)
+            box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
+            Lx, Ly, Lz = box_dims
+            coords = Chemfiles.positions(frame)
+
+            # making sure coordinates are within boundries
+            
+            coords = mod.(coords, box_dims)
+
+            # fixing z values if tail atoms are not near the middle Z values
+
+            while std(coords[3, tail_atoms_inds]) > 20
+                coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
+            end
+
+            midplane = mean(coords[3, tail_atoms_inds])
+            
+            Δz = (Lz / 2) - midplane
+            if abs(Δz) > 0.05 * Lz
+                coords[3, :] = mod.(coords[3, :] .+ Δz, Lz)
+                midplane = mean(coords[3, tail_atoms_inds])
+            end
+            
+            mid_x = coords[1, ind1]
+            Δx = (Lx / 2) - mid_x
+            coords[1, :] = mod.(coords[1, :] .+ Δx, Lx)
+
+            mid_y = coords[2, ind1]
+            Δy = (Ly / 2) - mid_y
+            coords[2, :] = mod.(coords[2, :] .+ Δy, Ly)
+            
+            # collecting angle value
+            ang = atan((coords[2, ind2] - coords[2, ind1]) / (coords[1, ind2] - coords[1, ind1]))
+            append!(angs, ang)
+        end
+
+        Chemfiles.close(traj); GC.gc()
+    end
+    
+    writedlm(output_file, [mean(angs) blocking_error(angs)])
     
     return nothing
 end
@@ -607,4 +710,27 @@ function voronoi_shells(; points, box_dims, center, n_shells)
 
     return shells
 
+end
+
+"""
+    sum_q4s(H)
+
+A function to sum contribution of all modes of a surface height Fourier transform weighted by q^4 (without the 2π/L factor), used in the modified fluctuation spectrum function which minimizes surface curvature energy to determine missing values.
+
+### Arguments
+
+* `H`: a 2-D array of surface height Fourier modes.
+
+"""
+function sum_q4s(H)
+    s = 0.0
+    n_grid_x, n_grid_y = size(H)
+    n_max_x = Int(floor(n_grid_x / 2)) - 1
+    n_max_y = Int(floor(n_grid_y / 2)) - 1
+
+    for i in -n_max_x:n_max_x, j in -n_max_y:n_max_y
+        x_ind, y_ind = mod1.((i, j) .+ 1, (n_grid_x, n_grid_y))
+        s += (H[x_ind, y_ind]) * (i^2 + j^2)^2
+    end
+    return s
 end

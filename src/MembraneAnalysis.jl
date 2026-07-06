@@ -30,26 +30,35 @@ export atom_leaflet,
        blocking_error,
        lipids_atoms_height,
        peptide_atoms_height,
+       syt7_angle,
        get_index_pairs,
        find_ref_atoms,
-       voronoi_shells
+       voronoi_shells,
+       sum_q4s
 include("utilities.jl")
 
 export fluctuation_spectrum,
+       fluctuation_spectrum_hmin,
+       fluctuation_spectrum_hmin_allC,
        area_expansion_modulus,
        fluctuation_hq2_data
 include("fluctuation_analysis.jl")
 
 export curvature,
+       curvature_X,
+       curvature_Y,
        lipids_sampled_curvature,
        peptide_sampled_curvature,
        lipids_curvature_spectrum,
        peptide_curvature_spectrum,
+       peptide_curvature_spectrum_X,
+       peptide_curvature_spectrum_Y,
        TCB_analysis,
        hq2_analysis
 include("curvature_analysis.jl")
 
-export lipids_thickness_spectrum,
+export thickness,
+       lipids_thickness_spectrum,
        peptide_thickness_spectrum
 include("thickness_analysis.jl")
 
@@ -61,5 +70,8 @@ include("density_analysis.jl")
 
 export count_interactions
 include("interactions.jl")
+
+export membrane_sampled_height
+include("ATG9A_analysis.jl")
 
 end # module

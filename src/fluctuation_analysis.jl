@@ -1,4 +1,767 @@
 """
+    fluctuation_spectrum_hmin_allC(;
+        pdb_file,
+        traj_file,
+        output_file,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        L_grid,
+        atom_mask_radius)
+
+Calculates the height and thickness fluctuation spectrum of a lipid bilayer simulation trajectory and saves the results as a HDF5 file with labels `hq` and `tq`. This version masks a radius around a single peptide and reconstruct the surface inside the masked region by minimizing the quadratic curvature deformation energy.
+
+### Keyword arguments
+
+* `pdf_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `output_file`: output HDF5;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `L_grid`: length of the lattice grid used to discretize the surface.
+* `atom_mask_radius`: distance from the CA atom to be masked.
+
+"""
+function fluctuation_spectrum_hmin_allC(; 
+    pdb_file,
+    traj_file,
+    output_file,
+    lipids,
+    ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+    L_grid,
+    atom_mask_radius
+)
+
+    # finding indices of reference atoms
+
+    atoms = PDBTools.readPDB(pdb_file)
+    leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
+
+    tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
+
+    ref_inds = []
+
+    for lipid in lipids
+        append!(ref_inds, [a.index for a in atoms if a.resname == lipid.name && a.name == ref_atoms[lipid]])
+    end
+    
+    # finding index of peptide reference atom (should be just one)
+    
+    pep_ref_inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && (a.name == "BB" || a.name == "CA")]
+
+    # calculating number of grid cells
+
+    (Lx, Ly, _) = box_dimensions(traj_file=traj_file) 
+    n_grid_x = Int(ceil(Lx / L_grid))
+    n_grid_y = Int(ceil(Ly / L_grid))
+
+    # opening trajectory
+
+    traj = Chemfiles.Trajectory(traj_file)
+    n_frames = Int(Chemfiles.size(traj))
+
+    hq = zeros(ComplexF32, n_frames, n_grid_x, n_grid_y)
+    tq = zeros(ComplexF32, n_frames, n_grid_x, n_grid_y)
+    l_id = zeros(Int32, n_frames, length(leaflet_id))
+
+    println("Calculating fluctuation spectrum for trajectory file $(traj_file)")
+    @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
+        
+        # read a frame
+
+        frame = Chemfiles.read_step(traj, frame_index - 1)
+        box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
+        Lx, Ly, Lz = box_dims
+        coords = Chemfiles.positions(frame)
+
+        # making sure coordinates are within boundries
+        
+        coords = mod.(coords, box_dims)
+
+        # fixing z values if tail atoms are not near the middle Z values
+        
+        while std(coords[3, tail_atoms_inds]) > 20
+            coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
+        end
+        
+        midplane = mean(coords[3, tail_atoms_inds])
+        
+        Δz = (Lz / 2) - midplane
+        if abs(Δz) > 0.05 * Lz
+            coords[3, :] = mod.(coords[3, :] .+ Δz, Lz)
+            midplane = mean(coords[3, tail_atoms_inds])
+        end
+        
+        ref_inds_1 = [i for i in ref_inds if leaflet_id[i] == 1]
+        ref_inds_2 = [i for i in ref_inds if leaflet_id[i] == -1]
+        
+        # calculate initial mean Z values to dynamically determine lipids leaflet
+        
+        zs_m = zeros(Float32, n_grid_x, n_grid_y)
+
+        # find average z of cells for leaflet 1
+
+        zs_1 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_1 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_1
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_1[x_index, y_index] += coords[3, index]
+            ns_1[x_index, y_index] += 1
+        end
+
+        zs_1 = zs_1 ./ ns_1
+        zs_m .+= zs_1
+       
+        # find average z of cells for leaflet 2
+
+        zs_2 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_2 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_2
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_2[x_index, y_index] += coords[3, index]
+            ns_2[x_index, y_index] += 1
+        end
+
+        zs_2 = zs_2 ./ ns_2
+        zs_m .+= zs_2
+        
+        zs_m ./= 2
+
+        # mask empty cells
+        
+        mask_inds = []
+
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            if ns_1[i, j] == 0
+                push!(mask_inds, CartesianIndex(i, j))
+            end
+            if ns_2[i, j] == 0
+                push!(mask_inds, CartesianIndex(i, j))
+            end
+        end
+        
+        # mask near peptide
+        
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            cell_x = (i - 0.5) * Lx / n_grid_x
+            cell_y = (j - 0.5) * Ly / n_grid_y
+            
+            cell_flag = false
+            for k in 1:length(pep_ref_inds)
+                pep_x = coords[1, pep_ref_inds[k]]
+                pep_y = coords[2, pep_ref_inds[k]]
+                if peuclidean([cell_x, cell_y], [pep_x, pep_y], [Lx, Ly]) < atom_mask_radius
+                    cell_flag = true
+                end
+            end
+            if cell_flag
+                push!(mask_inds, CartesianIndex(i, j))
+            end
+        end
+        
+        mask_inds = unique(mask_inds)
+        N_mask = length(mask_inds)
+        
+        # do initial surface curvature energy minimization
+        
+        h_0 = deepcopy(zs_m)
+        for ind in mask_inds
+            h_0[ind] = 0
+        end
+        hf_0 = fft(h_0)
+        
+        h_1s = []
+        hf_1s = []
+        for ind in mask_inds
+            h_1 = zero(h_0)
+            h_1[ind] = 1
+            push!(h_1s, h_1)
+            push!(hf_1s, fft(h_1))
+        end
+        
+        X = zeros(N_mask, N_mask)
+        for i in 1:N_mask
+            for j in 1:N_mask
+            X[i, j] = real(sum_q4s(hf_1s[i] .* adjoint.(hf_1s[j])))
+            end
+        end
+        
+        Y = zeros(N_mask, 1)
+        for i in 1:N_mask
+           Y[i] = -real(sum_q4s(hf_0 .* adjoint.(hf_1s[i]))) 
+        end
+        
+        Z = inv(X) * Y
+        for i in 1:N_mask
+            zs_m[mask_inds[i]] = Z[i]
+        end
+        
+        # determine lipids leaflet
+        
+        leaflet_id = atom_leaflet_dynamic(coords=coords, zs_m=zs_m, Ls=(Lx, Ly),
+                                  pdb_file=pdb_file, lipids=lipids)
+        l_id[frame_index, :] = leaflet_id
+       
+        # repeat analysis with dynamically determined lipid leaflet
+        
+        ref_inds_1 = [i for i in ref_inds if leaflet_id[i] == 1]
+        ref_inds_2 = [i for i in ref_inds if leaflet_id[i] == -1]
+
+        # find average z of cells for leaflet 1
+
+        zs_1 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_1 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_1
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_1[x_index, y_index] += coords[3, index]
+            ns_1[x_index, y_index] += 1
+        end
+
+        zs_1 = zs_1 ./ ns_1
+        zs_1 = zs_1 .- midplane
+       
+        # find average z of cells for leaflet 2
+
+        zs_2 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_2 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_2
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_2[x_index, y_index] += coords[3, index]
+            ns_2[x_index, y_index] += 1
+        end
+
+        zs_2 = zs_2 ./ ns_2
+        zs_2 = zs_2 .- midplane
+        
+        # mask empty cells
+        
+        mask_inds_1 = []
+        mask_inds_2 = []
+
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            if ns_1[i, j] == 0
+                push!(mask_inds_1, CartesianIndex(i, j))
+            end
+            if ns_2[i, j] == 0
+                push!(mask_inds_2, CartesianIndex(i, j))
+            end
+        end
+        
+        # mask near peptide
+        
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            cell_x = (i - 0.5) * Lx / n_grid_x
+            cell_y = (j - 0.5) * Ly / n_grid_y
+
+            cell_flag = false
+            for k in 1:length(pep_ref_inds)
+                pep_x = coords[1, pep_ref_inds[k]]
+                pep_y = coords[2, pep_ref_inds[k]]
+                if peuclidean([cell_x, cell_y], [pep_x, pep_y], [Lx, Ly]) < atom_mask_radius
+                    cell_flag = true
+                end
+            end
+            if cell_flag
+                push!(mask_inds_1, CartesianIndex(i, j))
+                push!(mask_inds_2, CartesianIndex(i, j))
+            end
+        end
+        
+        mask_inds_1 = unique(mask_inds_1)
+        N_mask_1 = length(mask_inds_1)
+        
+        mask_inds_2 = unique(mask_inds_2)
+        N_mask_2 = length(mask_inds_2)
+        
+        # do second surface curvature energy minimization, this time separately for each leaflet
+        
+        # leaflet 1
+        
+        h_0_1 = deepcopy(zs_1)
+        for ind in mask_inds_1
+            h_0_1[ind] = 0
+        end
+        hf_0_1 = fft(h_0_1)
+        
+        h_1s_1 = []
+        hf_1s_1 = []
+        for ind in mask_inds_1
+            h_1_1 = zero(h_0_1)
+            h_1_1[ind] = 1
+            push!(h_1s_1, h_1_1)
+            push!(hf_1s_1, fft(h_1_1))
+        end
+        
+        X_1 = zeros(N_mask_1, N_mask_1)
+        for i in 1:N_mask_1
+            for j in 1:N_mask_1
+            X_1[i, j] = real(sum_q4s(hf_1s_1[i] .* adjoint.(hf_1s_1[j])))
+            end
+        end
+        
+        Y_1 = zeros(N_mask_1, 1)
+        for i in 1:N_mask_1
+           Y_1[i] = -real(sum_q4s(hf_0_1 .* adjoint.(hf_1s_1[i]))) 
+        end
+        
+        Z_1 = inv(X_1) * Y_1
+        for i in 1:N_mask_1
+            zs_1[mask_inds_1[i]] = Z_1[i]
+        end
+        
+        # leaflet 2
+        
+        h_0_2 = deepcopy(zs_2)
+        for ind in mask_inds_2
+            h_0_2[ind] = 0
+        end
+        hf_0_2 = fft(h_0_2)
+        
+        h_1s_2 = []
+        hf_1s_2 = []
+        for ind in mask_inds_2
+            h_1_2 = zero(h_0_2)
+            h_1_2[ind] = 1
+            push!(h_1s_2, h_1_2)
+            push!(hf_1s_2, fft(h_1_2))
+        end
+        
+        X_2 = zeros(N_mask_2, N_mask_2)
+        for i in 1:N_mask_2
+            for j in 1:N_mask_2
+            X_2[i, j] = real(sum_q4s(hf_1s_2[i] .* adjoint.(hf_1s_2[j])))
+            end
+        end
+        
+        Y_2 = zeros(N_mask_2, 1)
+        for i in 1:N_mask_2
+           Y_2[i] = -real(sum_q4s(hf_0_2 .* adjoint.(hf_1s_2[i]))) 
+        end
+        
+        Z_2 = inv(X_2) * Y_2
+        for i in 1:N_mask_2
+            zs_2[mask_inds_2[i]] = Z_2[i]
+        end
+        
+        # calculate leaflets sepectra
+
+        hq_1 = fft(zs_1) * ((Lx * Ly) / (n_grid_x * n_grid_y))
+        hq_2 = fft(zs_2) * ((Lx * Ly) / (n_grid_x * n_grid_y))
+
+        hq[frame_index, :, :]  = (hq_1 .+ hq_2) ./ 2
+        tq[frame_index, :, :]  = (hq_1 .- hq_2)
+        
+        # phase-shifting the FFT to correspond to cell centers
+
+        Δϕs_x = fftfreq(n_grid_x, n_grid_x/Lx) * (-π) * (Lx / n_grid_x)
+        Δϕs_y = fftfreq(n_grid_y, n_grid_y/Ly) * (-π) * (Ly / n_grid_y)
+        Δϕs = [(Δϕ_x + Δϕ_y) for Δϕ_x in Δϕs_x, Δϕ_y in Δϕs_y]
+
+        hq[frame_index, :, :] .*= exp.(im .* Δϕs)
+        tq[frame_index, :, :] .*= exp.(im .* Δϕs)
+    end
+    
+    Chemfiles.close(traj); GC.gc()
+
+    if ispath(output_file) rm(output_file) end
+
+    h5write(output_file, "hq", hq)
+    h5write(output_file, "tq", tq)
+    h5write(output_file, "l_id", l_id)
+
+    return nothing
+end
+
+"""
+    fluctuation_spectrum_hmin(;
+        pdb_file,
+        traj_file,
+        output_file,
+        lipids,
+        ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+        L_grid
+        ref_residue,
+        mask_radius)
+
+Calculates the height and thickness fluctuation spectrum of a lipid bilayer simulation trajectory and saves the results as a HDF5 file with labels `hq` and `tq`. This version masks a radius around a single peptide and reconstruct the surface inside the masked region by minimizing the quadratic curvature deformation energy.
+
+### Keyword arguments
+
+* `pdf_file`: PDB structure file;
+* `traj_file`: trajectory file;
+* `output_file`: output HDF5;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_atoms`: a dictionary of reference atoms for each lipid;
+* `L_grid`: length of the lattice grid used to discretize the surface.
+* `ref_residue`: reference residue for determining position of the single peptide.
+* `mask_radius`: distance from the reference residue's CA atom to be masked.
+
+"""
+function fluctuation_spectrum_hmin(; 
+    pdb_file,
+    traj_file,
+    output_file,
+    lipids,
+    ref_atoms=Dict(lipid => lipid.ref_atom for lipid in lipids),
+    L_grid,
+    ref_residue,
+    mask_radius
+)
+
+    # finding indices of reference atoms
+
+    atoms = PDBTools.readPDB(pdb_file)
+    leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
+
+    tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
+
+    ref_inds = []
+
+    for lipid in lipids
+        append!(ref_inds, [a.index for a in atoms if a.resname == lipid.name && a.name == ref_atoms[lipid]])
+    end
+    
+    # finding index of peptide reference atom (should be just one)
+    
+    pep_ref_ind = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == ref_residue && a.name == "BB"][1]
+
+    # calculating number of grid cells
+
+    (Lx, Ly, _) = box_dimensions(traj_file=traj_file) 
+    n_grid_x = Int(ceil(Lx / L_grid))
+    n_grid_y = Int(ceil(Ly / L_grid))
+
+    # opening trajectory
+
+    traj = Chemfiles.Trajectory(traj_file)
+    n_frames = Int(Chemfiles.size(traj))
+
+    hq = zeros(ComplexF32, n_frames, n_grid_x, n_grid_y)
+    tq = zeros(ComplexF32, n_frames, n_grid_x, n_grid_y)
+    l_id = zeros(Int32, n_frames, length(leaflet_id))
+
+    println("Calculating fluctuation spectrum for trajectory file $(traj_file)")
+    @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
+        
+        # read a frame
+
+        frame = Chemfiles.read_step(traj, frame_index - 1)
+        box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
+        Lx, Ly, Lz = box_dims
+        coords = Chemfiles.positions(frame)
+
+        # making sure coordinates are within boundries
+        
+        coords = mod.(coords, box_dims)
+
+        # fixing z values if tail atoms are not near the middle Z values
+        
+        while std(coords[3, tail_atoms_inds]) > 20
+            coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
+        end
+        
+        midplane = mean(coords[3, tail_atoms_inds])
+        
+        Δz = (Lz / 2) - midplane
+        if abs(Δz) > 0.05 * Lz
+            coords[3, :] = mod.(coords[3, :] .+ Δz, Lz)
+            midplane = mean(coords[3, tail_atoms_inds])
+        end
+        
+        ref_inds_1 = [i for i in ref_inds if leaflet_id[i] == 1]
+        ref_inds_2 = [i for i in ref_inds if leaflet_id[i] == -1]
+        
+        # calculate initial mean Z values to dynamically determine lipids leaflet
+        
+        zs_m = zeros(Float32, n_grid_x, n_grid_y)
+
+        # find average z of cells for leaflet 1
+
+        zs_1 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_1 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_1
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_1[x_index, y_index] += coords[3, index]
+            ns_1[x_index, y_index] += 1
+        end
+
+        zs_1 = zs_1 ./ ns_1
+        zs_m .+= zs_1
+       
+        # find average z of cells for leaflet 2
+
+        zs_2 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_2 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_2
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_2[x_index, y_index] += coords[3, index]
+            ns_2[x_index, y_index] += 1
+        end
+
+        zs_2 = zs_2 ./ ns_2
+        zs_m .+= zs_2
+        
+        zs_m ./= 2
+
+        # mask empty cells
+        
+        mask_inds = []
+
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            if ns_1[i, j] == 0
+                push!(mask_inds, CartesianIndex(i, j))
+            end
+            if ns_2[i, j] == 0
+                push!(mask_inds, CartesianIndex(i, j))
+            end
+        end
+        
+        # mask near peptide
+        
+        pep_x = coords[1, pep_ref_ind]
+        pep_y = coords[2, pep_ref_ind]
+        
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            cell_x = (i - 0.5) * Lx / n_grid_x
+            cell_y = (j - 0.5) * Ly / n_grid_y
+            
+            if peuclidean([cell_x, cell_y], [pep_x, pep_y], [Lx, Ly]) < mask_radius
+                push!(mask_inds, CartesianIndex(i, j))
+            end
+        end
+        
+        mask_inds = unique(mask_inds)
+        N_mask = length(mask_inds)
+        
+        # do initial surface curvature energy minimization
+        
+        h_0 = deepcopy(zs_m)
+        for ind in mask_inds
+            h_0[ind] = 0
+        end
+        hf_0 = fft(h_0)
+        
+        h_1s = []
+        hf_1s = []
+        for ind in mask_inds
+            h_1 = zero(h_0)
+            h_1[ind] = 1
+            push!(h_1s, h_1)
+            push!(hf_1s, fft(h_1))
+        end
+        
+        X = zeros(N_mask, N_mask)
+        for i in 1:N_mask
+            for j in 1:N_mask
+            X[i, j] = real(sum_q4s(hf_1s[i] .* adjoint.(hf_1s[j])))
+            end
+        end
+        
+        Y = zeros(N_mask, 1)
+        for i in 1:N_mask
+           Y[i] = -real(sum_q4s(hf_0 .* adjoint.(hf_1s[i]))) 
+        end
+        
+        Z = inv(X) * Y
+        for i in 1:N_mask
+            zs_m[mask_inds[i]] = Z[i]
+        end
+        
+        # determine lipids leaflet
+        
+        leaflet_id = atom_leaflet_dynamic(coords=coords, zs_m=zs_m, Ls=(Lx, Ly),
+                                  pdb_file=pdb_file, lipids=lipids)
+        l_id[frame_index, :] = leaflet_id
+       
+        # repeat analysis with dynamically determined lipid leaflet
+        
+        ref_inds_1 = [i for i in ref_inds if leaflet_id[i] == 1]
+        ref_inds_2 = [i for i in ref_inds if leaflet_id[i] == -1]
+
+        # find average z of cells for leaflet 1
+
+        zs_1 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_1 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_1
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_1[x_index, y_index] += coords[3, index]
+            ns_1[x_index, y_index] += 1
+        end
+
+        zs_1 = zs_1 ./ ns_1
+        zs_1 = zs_1 .- midplane
+       
+        # find average z of cells for leaflet 2
+
+        zs_2 = zeros(Float32, n_grid_x, n_grid_y)
+        ns_2 = zeros(Int32, n_grid_x, n_grid_y)
+        
+        for index in ref_inds_2
+            x_index = Int(floor(coords[1, index] * n_grid_x / Lx)) + 1
+            y_index = Int(floor(coords[2, index] * n_grid_y / Ly)) + 1   
+
+            zs_2[x_index, y_index] += coords[3, index]
+            ns_2[x_index, y_index] += 1
+        end
+
+        zs_2 = zs_2 ./ ns_2
+        zs_2 = zs_2 .- midplane
+        
+        # mask empty cells
+        
+        mask_inds_1 = []
+        mask_inds_2 = []
+
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            if ns_1[i, j] == 0
+                push!(mask_inds_1, CartesianIndex(i, j))
+            end
+            if ns_2[i, j] == 0
+                push!(mask_inds_2, CartesianIndex(i, j))
+            end
+        end
+        
+        # mask near peptide
+        
+        pep_x = coords[1, pep_ref_ind]
+        pep_y = coords[2, pep_ref_ind]
+        
+        for i in 1:n_grid_x, j in 1:n_grid_y
+            cell_x = (i - 0.5) * Lx / n_grid_x
+            cell_y = (j - 0.5) * Ly / n_grid_y
+            
+            if peuclidean([cell_x, cell_y], [pep_x, pep_y], [Lx, Ly]) < mask_radius
+                push!(mask_inds_1, CartesianIndex(i, j))
+                push!(mask_inds_2, CartesianIndex(i, j))
+            end
+        end
+        
+        mask_inds_1 = unique(mask_inds_1)
+        N_mask_1 = length(mask_inds_1)
+        
+        mask_inds_2 = unique(mask_inds_2)
+        N_mask_2 = length(mask_inds_2)
+        
+        # do second surface curvature energy minimization, this time separately for each leaflet
+        
+        # leaflet 1
+        
+        h_0_1 = deepcopy(zs_1)
+        for ind in mask_inds_1
+            h_0_1[ind] = 0
+        end
+        hf_0_1 = fft(h_0_1)
+        
+        h_1s_1 = []
+        hf_1s_1 = []
+        for ind in mask_inds_1
+            h_1_1 = zero(h_0_1)
+            h_1_1[ind] = 1
+            push!(h_1s_1, h_1_1)
+            push!(hf_1s_1, fft(h_1_1))
+        end
+        
+        X_1 = zeros(N_mask_1, N_mask_1)
+        for i in 1:N_mask_1
+            for j in 1:N_mask_1
+            X_1[i, j] = real(sum_q4s(hf_1s_1[i] .* adjoint.(hf_1s_1[j])))
+            end
+        end
+        
+        Y_1 = zeros(N_mask_1, 1)
+        for i in 1:N_mask_1
+           Y_1[i] = -real(sum_q4s(hf_0_1 .* adjoint.(hf_1s_1[i]))) 
+        end
+        
+        Z_1 = inv(X_1) * Y_1
+        for i in 1:N_mask_1
+            zs_1[mask_inds_1[i]] = Z_1[i]
+        end
+        
+        # leaflet 2
+        
+        h_0_2 = deepcopy(zs_2)
+        for ind in mask_inds_2
+            h_0_2[ind] = 0
+        end
+        hf_0_2 = fft(h_0_2)
+        
+        h_1s_2 = []
+        hf_1s_2 = []
+        for ind in mask_inds_2
+            h_1_2 = zero(h_0_2)
+            h_1_2[ind] = 1
+            push!(h_1s_2, h_1_2)
+            push!(hf_1s_2, fft(h_1_2))
+        end
+        
+        X_2 = zeros(N_mask_2, N_mask_2)
+        for i in 1:N_mask_2
+            for j in 1:N_mask_2
+            X_2[i, j] = real(sum_q4s(hf_1s_2[i] .* adjoint.(hf_1s_2[j])))
+            end
+        end
+        
+        Y_2 = zeros(N_mask_2, 1)
+        for i in 1:N_mask_2
+           Y_2[i] = -real(sum_q4s(hf_0_2 .* adjoint.(hf_1s_2[i]))) 
+        end
+        
+        Z_2 = inv(X_2) * Y_2
+        for i in 1:N_mask_2
+            zs_2[mask_inds_2[i]] = Z_2[i]
+        end
+        
+        # calculate leaflets sepectra
+
+        hq_1 = fft(zs_1) * ((Lx * Ly) / (n_grid_x * n_grid_y))
+        hq_2 = fft(zs_2) * ((Lx * Ly) / (n_grid_x * n_grid_y))
+
+        hq[frame_index, :, :]  = (hq_1 .+ hq_2) ./ 2
+        tq[frame_index, :, :]  = (hq_1 .- hq_2)
+        
+        # phase-shifting the FFT to correspond to cell centers
+
+        Δϕs_x = fftfreq(n_grid_x, n_grid_x/Lx) * (-π) * (Lx / n_grid_x)
+        Δϕs_y = fftfreq(n_grid_y, n_grid_y/Ly) * (-π) * (Ly / n_grid_y)
+        Δϕs = [(Δϕ_x + Δϕ_y) for Δϕ_x in Δϕs_x, Δϕ_y in Δϕs_y]
+
+        hq[frame_index, :, :] .*= exp.(im .* Δϕs)
+        tq[frame_index, :, :] .*= exp.(im .* Δϕs)
+    end
+    
+    Chemfiles.close(traj); GC.gc()
+
+    if ispath(output_file) rm(output_file) end
+
+    h5write(output_file, "hq", hq)
+    h5write(output_file, "tq", tq)
+    h5write(output_file, "l_id", l_id)
+
+    return nothing
+end
+
+"""
     fluctuation_spectrum(;
         pdb_file,
         traj_file,
@@ -72,7 +835,7 @@ function fluctuation_spectrum(;
 
         # fixing z values if tail atoms are not near the middle Z values
         
-        while std(coords[3, tail_atoms_inds]) > 15
+        while std(coords[3, tail_atoms_inds]) > 20
             coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
         end
         
@@ -262,7 +1025,9 @@ function fluctuation_spectrum(;
     end
     
     Chemfiles.close(traj); GC.gc()
-    
+
+    if ispath(output_file) rm(output_file) end
+
     h5write(output_file, "hq", hq)
     h5write(output_file, "tq", tq)
     h5write(output_file, "l_id", l_id)

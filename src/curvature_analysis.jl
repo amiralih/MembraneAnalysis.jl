@@ -56,6 +56,120 @@ function curvature(;
 end
 
 """
+    curvature_X(;
+        point,
+        hq,
+        box_dims,
+        q_max,
+        q_min=0)
+
+Calculates curvature (along X direction) per mode of a point from fluctuation spectrum.
+
+### Keyword arguments
+
+* `point`: ordered pair of X and Y values;
+* `hq`: 2D matrix of height fluctuation spectrum;
+* `box_dims`: ordered pair of simulation box Lx and Ly values;
+* `q_max`: maximum q mode magnitude value to be used.
+* `q_min`: minimum q mode magnitude value to be used (zero by default).
+
+"""
+function curvature_X(;
+    point,
+    hq,
+    box_dims,
+    q_max,
+    q_min=0
+)
+    Lx, Ly = box_dims
+
+    c = 0im
+    
+    # number of degrees of freedom (sines and cosines) = one per q value since q_(m=1, n=0) = [q_(m=-1, n=0)]^*
+    
+    n_dof = 0
+
+    n_grid_x, n_grid_y = size(hq)
+    n_max_x = Int(floor(n_grid_x / 2)) - 1
+    n_max_y = Int(floor(n_grid_y / 2)) - 1
+    
+    for i in -n_max_x:n_max_x, j in -n_max_y:n_max_y
+        qx, qy = (2π ./ (Lx, Ly)) .* (i, 0)
+        
+        x_ind, y_ind = mod1.((i, 0) .+ 1, (n_grid_x, n_grid_y))
+        
+        if q_min^2 < (qx^2 + qy^2) < q_max^2
+            c += (1 / (Lx * Ly)) * hq[x_ind, y_ind] * (qx^2 + qy^2) * exp(im * (qx * point[1] + qy * point[2]))
+            n_dof += 1
+        end
+    end
+
+    # number of modes is half of the number of degrees of freedom
+    
+    n_modes = n_dof / 2
+    c_per_mode = real(c) / n_modes
+
+    return  c_per_mode
+end
+
+"""
+    curvature_Y(;
+        point,
+        hq,
+        box_dims,
+        q_max,
+        q_min=0)
+
+Calculates curvature (along Y direction) per mode of a point from fluctuation spectrum.
+
+### Keyword arguments
+
+* `point`: ordered pair of X and Y values;
+* `hq`: 2D matrix of height fluctuation spectrum;
+* `box_dims`: ordered pair of simulation box Lx and Ly values;
+* `q_max`: maximum q mode magnitude value to be used.
+* `q_min`: minimum q mode magnitude value to be used (zero by default).
+
+"""
+function curvature_Y(;
+    point,
+    hq,
+    box_dims,
+    q_max,
+    q_min=0
+)
+    Lx, Ly = box_dims
+
+    c = 0im
+    
+    # number of degrees of freedom (sines and cosines) = one per q value since q_(m=1, n=0) = [q_(m=-1, n=0)]^*
+    
+    n_dof = 0
+
+    n_grid_x, n_grid_y = size(hq)
+    n_max_x = Int(floor(n_grid_x / 2)) - 1
+    n_max_y = Int(floor(n_grid_y / 2)) - 1
+    
+    for i in -n_max_x:n_max_x, j in -n_max_y:n_max_y
+        qx, qy = (2π ./ (Lx, Ly)) .* (0, j)
+        
+        x_ind, y_ind = mod1.((0, j) .+ 1, (n_grid_x, n_grid_y))
+        
+        if q_min^2 < (qx^2 + qy^2) < q_max^2
+            c += (1 / (Lx * Ly)) * hq[x_ind, y_ind] * (qx^2 + qy^2) * exp(im * (qx * point[1] + qy * point[2]))
+            n_dof += 1
+        end
+    end
+
+    # number of modes is half of the number of degrees of freedom
+    
+    n_modes = n_dof / 2
+    c_per_mode = real(c) / n_modes
+
+    return  c_per_mode
+end
+
+"""
     lipids_sampled_curvature(;
         pdb_file,
         traj_files,
@@ -98,7 +212,7 @@ function lipids_sampled_curvature(;
     lipid_Cs = Dict()
 
     for lipid in lipids
-        lipid_Cs[lipid.name] = unique([a.name for a in atoms if a.resname == lipid.name && a.name[1] in ['C', 'D', 'G']])
+        lipid_Cs[lipid.name] = unique([a.name for a in atoms if a.resname == lipid.name && a.name[1] in ['C', 'D', 'G', 'X']])
     end
     
     # creating dictionary of vectors to record <c> values
@@ -147,7 +261,7 @@ function lipids_sampled_curvature(;
 
             # fixing z values if tail atoms are not near the middle Z values
 
-            while std(coords[3, tail_atoms_inds]) > 15
+            while std(coords[3, tail_atoms_inds]) > 20
                 coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
             end
 
@@ -220,9 +334,10 @@ end
         pdb_file,
         traj_files,
         fs_files,
-        output_dir,
+        output_file,
         lipids,
-        q_max)
+        q_max,
+        q_min=0.0)
 
 Calculates mean sampled curvature of CA atoms of peptide residues. 
 
@@ -234,7 +349,8 @@ Calculates mean sampled curvature of CA atoms of peptide residues.
 * `output_file`: output file;
 * `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
 * `n_residues`: number of residues in the peptide;
-* `q_max`: maximum q mode magnitude value to be used.
+* `q_max`: maximum q mode magnitude value to be used;
+* `q_min`: minimum q mode magnitude value to be used.
 
 """
 function peptide_sampled_curvature(;
@@ -244,7 +360,8 @@ function peptide_sampled_curvature(;
     output_file,
     lipids,
     n_residues,
-    q_max
+    q_max,
+    q_min=0.0
 )
     # finding indices of tail atoms
 
@@ -256,12 +373,9 @@ function peptide_sampled_curvature(;
     # creating dictionary of vectors to record <c> values
     
     cs = Dict()
-    cs_frame = Dict()
-
-    cs["PEP"] = Dict()
 
     for i in 1:n_residues
-        cs["PEP"][i] = Float64[]
+        cs[i] = Float64[]
     end
 
     # reading trajectories    
@@ -291,7 +405,7 @@ function peptide_sampled_curvature(;
 
             # fixing z values if tail atoms are not near the middle Z values
 
-            while std(coords[3, tail_atoms_inds]) > 15
+            while std(coords[3, tail_atoms_inds]) > 20
                 coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
             end
 
@@ -309,19 +423,21 @@ function peptide_sampled_curvature(;
             
                 # finding indices of CA atoms of this residue in each leaflet
 
-                inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.resnum == i && a.name == "CA"]
+                inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == i && a.name == "CA"]
                 inds_1 = [j for j in inds if atoms[j].z > 0.0]
                 inds_2 = [j for j in inds if atoms[j].z < 0.0]
 
                 for index in inds_1
-                    push!(cs["PEP"][i], curvature(point=coords[1:2, index],
-                                                  hq=hq[frame_index,:,:],
-                                                  box_dims=(Lx, Ly), q_max=q_max))
+                    push!(cs[i], curvature(point=coords[1:2, index],
+                                           hq=hq[frame_index,:,:],
+                                           box_dims=(Lx, Ly),
+                                           q_max=q_max, q_min=q_min))
                 end
                 for index in inds_2
-                    push!(cs["PEP"][i], -curvature(point=coords[1:2, index],
-                                                   hq=hq[frame_index,:,:],
-                                                   box_dims=(Lx, Ly), q_max=q_max))
+                    push!(cs[i], -curvature(point=coords[1:2, index],
+                                            hq=hq[frame_index,:,:],
+                                            box_dims=(Lx, Ly),
+                                            q_max=q_max, q_min=q_min))
                 end
             end
         end
@@ -333,8 +449,8 @@ function peptide_sampled_curvature(;
     output_ces = Float64[]
     
     for i in 1:n_residues
-        push!(output_cs, mean(cs["PEP"][i]))
-        push!(output_ces, blocking_error(cs["PEP"][i]))
+        push!(output_cs, mean(cs[i]))
+        push!(output_ces, blocking_error(cs[i]))
     end
     
     writedlm(output_file, [1:n_residues output_cs output_ces])
@@ -452,7 +568,7 @@ function lipids_curvature_spectrum(;
 
             # fixing z values if tail atoms are not near the middle Z values
 
-            while std(coords[3, tail_atoms_inds]) > 15
+            while std(coords[3, tail_atoms_inds]) > 20
                 coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
             end
 
@@ -530,7 +646,10 @@ end
         output_file,
         lipids,
         ref_residue),
-        q_max)
+        q_max,
+        q_min,
+        nqs
+)
 
 Calculates curvature spectrum of the peptide using the CA atom of its reference residue. Assumes square (Lx = Ly) bilayer.
 
@@ -542,7 +661,9 @@ Calculates curvature spectrum of the peptide using the CA atom of its reference 
 * `output_file`: output file;
 * `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
 * `ref_residue`: residue number of the reference residue of the peptide;
-* `q_max`: maximum q mode magnitude value to be used.
+* `q_max`: maximum q mode magnitude value to be used;
+* `q_min`: minimum q mode magnitude value to be used;
+* `nqs`: number of segments to divide the q range from q_min to q_max.
 
 """
 function peptide_curvature_spectrum(;
@@ -552,33 +673,27 @@ function peptide_curvature_spectrum(;
     output_file,
     lipids,
     ref_residue,
-    q_max
+    q_max=0.21,
+    q_min=0.01,
+    nqs=10
 )
     # finding indices of tail atoms
 
     atoms = PDBTools.readPDB(pdb_file)
-    leaflet_id = atom_leaflet(pdb_file=pdb_file, lipids=lipids)
 
     tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
-
-    # find |q| values (up to q_max) and corresponing indices
     
-    (L, _, _) = box_dimensions(traj_file=traj_files[1])
+    # find mid-segment |q| values (q_min to q_max)
 
-    # including at least 9 q values (for N = 4) even if greater than q_max
+    dq = (q_max - q_min) / nqs
+    qs = collect((q_min + (dq / 2)):dq:q_max)
 
-    N = max(Int(floor(q_max / (2π / L))), 4)
-    values, index_pairs = get_index_pairs(N)
-    qs = values * (2π / L)
- 
     # creating dictionary of vectors to record c_q values
     
     cqs = Dict()
 
-    cqs["PEP"] = Dict()
-
-    for q_i in 2:length(qs)
-        cqs["PEP"][q_i] = Float64[]
+    for q_i in 1:nqs
+        cqs[q_i] = Float64[]
     end
 
     # reading trajectories    
@@ -608,7 +723,7 @@ function peptide_curvature_spectrum(;
 
             # fixing z values if tail atoms are not near the middle Z values
 
-            while std(coords[3, tail_atoms_inds]) > 15
+            while std(coords[3, tail_atoms_inds]) > 20
                 coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
             end
 
@@ -622,43 +737,27 @@ function peptide_curvature_spectrum(;
             
             # finding indices of CA atoms of the reference residue in each leaflet
 
-            ref_inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.resnum == ref_residue && a.name == "CA"]
+            ref_inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == ref_residue && (a.name == "BB" || a.name == "CA")]
             ref_inds_1 = [j for j in ref_inds if atoms[j].z > 0.0]
             ref_inds_2 = [j for j in ref_inds if atoms[j].z < 0.0]
 
-            for q_i in 2:length(qs)
-                total_c = 0.0
-                
-                # tow degrees of freedom per mode
-
-                N_modes = 2 * length(index_pairs[q_i])
-                N_peptides = length(ref_inds) 
+            for q_i in 1:nqs
+                q2 = q_min + q_i * dq 
+                q1 = q_min + (q_i - 1) * dq
 
                 for index in ref_inds_1
-                    X = coords[1, index]
-                    Y = coords[2, index]
-                    for (I_ind, J_ind) in index_pairs[q_i]
-                        x_ind = I_ind + 1
-                        y_ind = J_ind + 1
-                        qx = I_ind * 2π / Lx
-                        qy = J_ind * 2π / Ly
-                        total_c += real((1 / (Lx * Ly)) * qs[q_i]^2 * hq[frame_index, x_ind, y_ind] *
-                                        exp(im * (qx * X + qy * Y)))
-                    end
+                    push!(cqs[q_i], curvature(point=coords[1:2, index],
+                                              hq=hq[frame_index,:,:],
+                                              box_dims=(Lx, Ly),
+                                              q_max=q2, q_min=q1))
                 end
+                
                 for index in ref_inds_2
-                    X = coords[1, index]
-                    Y = coords[2, index]
-                    for (I_ind, J_ind) in index_pairs[q_i]
-                        x_ind = I_ind + 1
-                        y_ind = J_ind + 1
-                        qx = I_ind * 2π / Lx
-                        qy = J_ind * 2π / Ly
-                        total_c -= real((1 / (Lx * Ly)) * qs[q_i]^2 * hq[frame_index, x_ind, y_ind] *
-                                        exp(im * (qx * X + qy * Y)))
-                    end
+                    push!(cqs[q_i], -curvature(point=coords[1:2, index],
+                                               hq=hq[frame_index,:,:],
+                                               box_dims=(Lx, Ly),
+                                               q_max=q2, q_min=q1))
                 end
-                push!(cqs["PEP"][q_i], total_c / (N_modes * N_peptides))
             end
         end
         Chemfiles.close(traj); GC.gc()
@@ -667,12 +766,288 @@ function peptide_curvature_spectrum(;
     output_cqs = Float64[]
     output_cqes = Float64[]
     
-    for q_i in 2:length(qs)
-        push!(output_cqs, mean(cqs["PEP"][q_i]))
-        push!(output_cqes, blocking_error(cqs["PEP"][q_i]))
+    for q_i in 1:nqs
+        push!(output_cqs, mean(cqs[q_i]))
+        push!(output_cqes, blocking_error(cqs[q_i]))
     end
     
-    writedlm(output_file, [qs[2:end] output_cqs output_cqes])
+    writedlm(output_file, [qs output_cqs output_cqes])
+    
+    return nothing
+end
+
+"""
+    peptide_curvature_spectrum_X(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_file,
+        lipids,
+        ref_residue),
+        q_max,
+        q_min,
+        nqs
+)
+
+Calculates curvature spectrum of the peptide (in X direction) using the CA atom of its reference residue. Assumes square (Lx = Ly) bilayer.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_file`: output file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_residue`: residue number of the reference residue of the peptide;
+* `q_max`: maximum q mode magnitude value to be used;
+* `q_min`: minimum q mode magnitude value to be used;
+* `nqs`: number of segments to divide the q range from q_min to q_max.
+
+"""
+function peptide_curvature_spectrum_X(;
+    pdb_file,
+    traj_files,
+    fs_files,
+    output_file,
+    lipids,
+    ref_residue,
+    q_max=0.21,
+    q_min=0.01,
+    nqs=10
+)
+    # finding indices of tail atoms
+
+    atoms = PDBTools.readPDB(pdb_file)
+
+    tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
+    
+    # find mid-segment |q| values (q_min to q_max)
+
+    dq = (q_max - q_min) / nqs
+    qs = collect((q_min + (dq / 2)):dq:q_max)
+
+    # creating dictionary of vectors to record c_q values
+    
+    cqs = Dict()
+
+    for q_i in 1:nqs
+        cqs[q_i] = Float64[]
+    end
+
+    # reading trajectories    
+
+    for (traj_file, fs_file) in zip(traj_files, fs_files)
+        traj = Chemfiles.Trajectory(traj_file)
+        n_frames = Int(Chemfiles.size(traj))
+        
+        hq = h5read(fs_file, "hq")
+        l_id = h5read(fs_file, "l_id")
+
+        println("Calculating curvature spectrum for trajectory file $(traj_file)")
+        @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
+            
+            # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
+
+            frame = Chemfiles.read_step(traj, frame_index - 1)
+            box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
+            Lx, Ly, Lz = box_dims
+            coords = Chemfiles.positions(frame)
+
+            # making sure coordinates are within boundries
+            
+            coords = mod.(coords, box_dims)
+
+            # fixing z values if tail atoms are not near the middle Z values
+
+            while std(coords[3, tail_atoms_inds]) > 20
+                coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
+            end
+
+            midplane = mean(coords[3, tail_atoms_inds])
+            
+            Δz = (Lz / 2) - midplane
+            if abs(Δz) > 0.05 * Lz
+                coords[3, :] = mod.(coords[3, :] .+ Δz, Lz)
+                midplane = mean(coords[3, tail_atoms_inds])
+            end
+            
+            # finding indices of CA atoms of the reference residue in each leaflet
+
+            ref_inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == ref_residue && a.name == "CA"]
+            ref_inds_1 = [j for j in ref_inds if atoms[j].z > 0.0]
+            ref_inds_2 = [j for j in ref_inds if atoms[j].z < 0.0]
+
+            for q_i in 1:nqs
+                q2 = q_min + q_i * dq 
+                q1 = q_min + (q_i - 1) * dq
+
+                for index in ref_inds_1
+                    push!(cqs[q_i], curvature_X(point=coords[1:2, index],
+                                              hq=hq[frame_index,:,:],
+                                              box_dims=(Lx, Ly),
+                                              q_max=q2, q_min=q1))
+                end
+                
+                for index in ref_inds_2
+                    push!(cqs[q_i], -curvature_X(point=coords[1:2, index],
+                                               hq=hq[frame_index,:,:],
+                                               box_dims=(Lx, Ly),
+                                               q_max=q2, q_min=q1))
+                end
+            end
+        end
+        Chemfiles.close(traj); GC.gc()
+    end
+    
+    output_cqs = Float64[]
+    output_cqes = Float64[]
+    
+    for q_i in 1:nqs
+        push!(output_cqs, mean(cqs[q_i]))
+        push!(output_cqes, blocking_error(cqs[q_i]))
+    end
+    
+    writedlm(output_file, [qs output_cqs output_cqes])
+    
+    return nothing
+end
+
+"""
+    peptide_curvature_spectrum_Y(;
+        pdb_file,
+        traj_files,
+        fs_files,
+        output_file,
+        lipids,
+        ref_residue),
+        q_max,
+        q_min,
+        nqs
+)
+
+Calculates curvature spectrum of the peptide (in Y direction) using the CA atom of its reference residue. Assumes square (Lx = Ly) bilayer.
+
+### Keyword arguments
+
+* `pdb_file`: PDB structure file;
+* `traj_files`: a list of trajectory files;
+* `fs_files`: a list of corresponding HDF5 fluctuation spectrum files of the trajectory files;
+* `output_file`: output file;
+* `lipids`: a list of lipids of type `Lipid` as defined in `lipids.jl`;
+* `ref_residue`: residue number of the reference residue of the peptide;
+* `q_max`: maximum q mode magnitude value to be used;
+* `q_min`: minimum q mode magnitude value to be used;
+* `nqs`: number of segments to divide the q range from q_min to q_max.
+
+"""
+function peptide_curvature_spectrum_Y(;
+    pdb_file,
+    traj_files,
+    fs_files,
+    output_file,
+    lipids,
+    ref_residue,
+    q_max=0.21,
+    q_min=0.01,
+    nqs=10
+)
+    # finding indices of tail atoms
+
+    atoms = PDBTools.readPDB(pdb_file)
+
+    tail_atoms_inds = [a.index for a in atoms if (a.resname, a.name) in [(lipid.name, lipid.tail_atom) for lipid in lipids]]
+    
+    # find mid-segment |q| values (q_min to q_max)
+
+    dq = (q_max - q_min) / nqs
+    qs = collect((q_min + (dq / 2)):dq:q_max)
+
+    # creating dictionary of vectors to record c_q values
+    
+    cqs = Dict()
+
+    for q_i in 1:nqs
+        cqs[q_i] = Float64[]
+    end
+
+    # reading trajectories    
+
+    for (traj_file, fs_file) in zip(traj_files, fs_files)
+        traj = Chemfiles.Trajectory(traj_file)
+        n_frames = Int(Chemfiles.size(traj))
+        
+        hq = h5read(fs_file, "hq")
+        l_id = h5read(fs_file, "l_id")
+
+        println("Calculating curvature spectrum for trajectory file $(traj_file)")
+        @showprogress 0.01 "Analyzing trajectory..." for frame_index in 1:n_frames
+            
+            # read a frame
+            
+            leaflet_id = l_id[frame_index, :]
+
+            frame = Chemfiles.read_step(traj, frame_index - 1)
+            box_dims = Chemfiles.lengths(Chemfiles.UnitCell(frame))
+            Lx, Ly, Lz = box_dims
+            coords = Chemfiles.positions(frame)
+
+            # making sure coordinates are within boundries
+            
+            coords = mod.(coords, box_dims)
+
+            # fixing z values if tail atoms are not near the middle Z values
+
+            while std(coords[3, tail_atoms_inds]) > 20
+                coords[3, :] = mod.(coords[3, :] .+ 20, Lz)
+            end
+
+            midplane = mean(coords[3, tail_atoms_inds])
+            
+            Δz = (Lz / 2) - midplane
+            if abs(Δz) > 0.05 * Lz
+                coords[3, :] = mod.(coords[3, :] .+ Δz, Lz)
+                midplane = mean(coords[3, tail_atoms_inds])
+            end
+            
+            # finding indices of CA atoms of the reference residue in each leaflet
+
+            ref_inds = [a.index for a in atoms if a.segname[1:3] == "PRO" && a.residue == ref_residue && a.name == "CA"]
+            ref_inds_1 = [j for j in ref_inds if atoms[j].z > 0.0]
+            ref_inds_2 = [j for j in ref_inds if atoms[j].z < 0.0]
+
+            for q_i in 1:nqs
+                q2 = q_min + q_i * dq 
+                q1 = q_min + (q_i - 1) * dq
+
+                for index in ref_inds_1
+                    push!(cqs[q_i], curvature_Y(point=coords[1:2, index],
+                                              hq=hq[frame_index,:,:],
+                                              box_dims=(Lx, Ly),
+                                              q_max=q2, q_min=q1))
+                end
+                
+                for index in ref_inds_2
+                    push!(cqs[q_i], -curvature_Y(point=coords[1:2, index],
+                                               hq=hq[frame_index,:,:],
+                                               box_dims=(Lx, Ly),
+                                               q_max=q2, q_min=q1))
+                end
+            end
+        end
+        Chemfiles.close(traj); GC.gc()
+    end
+    
+    output_cqs = Float64[]
+    output_cqes = Float64[]
+    
+    for q_i in 1:nqs
+        push!(output_cqs, mean(cqs[q_i]))
+        push!(output_cqes, blocking_error(cqs[q_i]))
+    end
+    
+    writedlm(output_file, [qs output_cqs output_cqes])
     
     return nothing
 end
@@ -724,7 +1099,9 @@ function TCB_analysis(;
                 legend=:outerright, grid=false,
                 xlabel=L"z",
                 ylabel=L"\langle c \rangle(z-\delta)",
-                yformatter=:scientific)
+                yformatter=:scientific,
+                left_margin=20Plots.mm,
+                bottom_margin=10Plots.mm)
         plot()
 
         hline!([0], lc=:black, label=false)
