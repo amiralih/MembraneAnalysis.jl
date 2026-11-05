@@ -1,0 +1,143 @@
+# MembraneAnalysis.jl parameters file (TOML) — annotated example.
+#
+# This example reproduces the per-trajectory script used for the amphipathic-helix systems
+# (POPC + one peptide, Martini) and adds the statistics over all trajectories. Run with
+#
+#   membrane-analysis parameters.toml step5_charmm2gmx.pdb step7_{1..15}.xtc -o R_5/l8_rep1
+#
+# Lines starting with # are comments. Every key that is not marked "required" has a default.
+
+title = "L8 peptide in POPC, replica 1"          # optional, printed in the log
+
+# ------------------------------------------------------------------------------- lipids
+# One [[lipids]] table per lipid species. `name` is the residue name in the PDB file.
+# Atoms of one lipid must be contiguous, starting with `head_atom`; `n_atoms` atoms per lipid.
+
+[[lipids]]
+name = "POPC"
+head_atom = "NC3"      # first atom of the lipid; its height decides the leaflet
+ref_atom = "C1A"       # defines the membrane surface and the lipid position in spectra
+tail_atom = "C4B"      # mean height of all tail atoms = bilayer midplane
+n_atoms = 12
+# height_atoms = ["GL1", "GL2", "C1A", "D2A", "C3A", "C4A", "C1B", "C2B", "C3B", "C4B"]
+#   atoms used by lipid_heights / lipid_sampled_curvature / tcb
+#   (default: all atoms whose name starts with C, D, G or X)
+
+# Presets can be used instead and selectively overridden:
+# [[lipids]]
+# preset = "DOPC_m2"   # POPC_aa, Chol_aa, DMPC_aa, DOPC_aa, SOPC_aa, POPC_m2, DOPE_m2, DOPC_m2
+# ref_atom = "C1A"
+
+# ------------------------------------------------------------------------------ proteins
+# Optional. Proteins are selected by segment names, chains, or a segment-name prefix.
+# Several copies (e.g. PROA, PROB) are averaged in per-residue results.
+
+[[proteins]]
+name = "PEP"                   # label used in output file names (PEP_cqs.dat, ...)
+segments = ["PROA"]            # exact segment names (PDB columns 73-76)
+# chains = ["A"]               # alternatively: chain identifiers
+# segment_prefix = "PRO"       # default selection when neither segments nor chains are given
+backbone_atoms = ["BB", "CA"]  # atom(s) representing each residue (BB: Martini, CA: all-atom)
+leaflet = "auto"               # sign convention: "auto" (from the PDB structure), "upper", "lower"
+
+# ------------------------------------------------------------------------------- surface
+# How the membrane surface (and the height/thickness spectra) is computed in every frame.
+
+[surface]
+grid_spacing = 15.0            # Å; grid = ceil(<L> / grid_spacing) cells per direction
+# grid_size = [14, 14]         # or set the number of cells explicitly
+mask_radius = 5.0              # Å; cells closer than this to protein backbone atoms are
+                               # reconstructed by minimising the bending energy (0 = off)
+mask_proteins = ["PEP"]        # proteins to mask (default: all proteins when mask_radius > 0)
+# mask_residues = "1:8"        # restrict the mask to some residues
+fill = "min_curvature"         # empty cells: "min_curvature" (default with a mask) or
+                               # "neighbors" (default without a mask; v0.3 behaviour)
+center_threshold = 20.0        # Å; bilayer split across z boundary if std(tail z) exceeds this
+
+# ------------------------------------------------------------------------------ spectrum
+# Defaults for every *_spectrum analysis (each analysis can override them).
+
+[spectrum]
+q_min = 0.01                   # 1/Å
+q_max = 0.20                   # 1/Å
+n_bins = 19                    # equal-width shells between q_min and q_max
+
+# ---------------------------------------------------------------------------- statistics
+
+[statistics]
+blocking = "equal"             # "equal": n_blocks contiguous blocks of the concatenated frames
+                               # "trajectory": one block per trajectory file
+                               # "auto": block size chosen automatically (Jonsson 2018)
+n_blocks = 10
+
+# -------------------------------------------------------------------------------- output
+
+[output]
+directory = "membrane_analysis_results"   # overridden by the -o command-line option
+save_spectra = true            # store hq, tq of every frame in timeseries/*.h5
+
+# ------------------------------------------------------------------------------ analyses
+# One [[analysis]] table per analysis. Optional `label` changes the output file name
+# (<LIPID or PROTEIN>_<label>.dat); give different labels when the same analysis type is
+# requested twice (e.g. for two reference residues), otherwise the run is rejected.
+
+[[analysis]]
+type = "box"                   # box_dims.dat, A.dat, KA.dat (area expansion modulus)
+
+[[analysis]]
+type = "lipid_heights"         # POPC_zs.dat: height of every height atom above the midplane
+
+[[analysis]]
+type = "protein_heights"       # PEP_zs.dat: height of every residue's backbone atom
+residues = "1:8"               # default: all residues
+
+[[analysis]]
+type = "lipid_curvature_spectrum"     # POPC_cqs.dat (uses [spectrum] defaults)
+
+[[analysis]]
+type = "lipid_thickness_spectrum"     # POPC_tqs.dat
+
+[[analysis]]
+type = "protein_curvature_spectrum"   # PEP_cqs.dat
+residue = 4
+
+[[analysis]]
+type = "protein_curvature_spectrum"   # PEP_cqs_X.dat (modes along x only)
+residue = 4
+direction = "x"
+
+[[analysis]]
+type = "protein_curvature_spectrum"   # PEP_cqs_Y.dat
+residue = 4
+direction = "y"
+
+[[analysis]]
+type = "protein_thickness_spectrum"   # PEP_tqs.dat
+residue = 4
+
+[[analysis]]
+type = "protein_curvature_spectrum"   # PEP_cqs_fixTCB.dat
+residue = 5
+label = "cqs_fixTCB"
+
+# Further analyses (see the documentation):
+#
+# [[analysis]]
+# type = "undulation"          # hq2.dat, tq2.dat, kc_hq2.dat (bending modulus from <|h_q|^2>)
+# q_max = 0.08
+# model = "TD"                 # "HC", "MNK" or "TD"
+#
+# [[analysis]]
+# type = "lipid_sampled_curvature"   # POPC_cs.dat
+# q_max = 0.08
+#
+# [[analysis]]
+# type = "protein_sampled_curvature" # PEP_cs.dat
+# q_max = 0.08
+#
+# [[analysis]]
+# type = "tcb"                 # TCB.dat, TCB_lipids.dat, <LIPID>_TCB_profile.dat
+# q_max = 0.08
+# z_cutoff = 14.0
+# weights = { POPC = 1.0 }     # area fractions (default: equal)
+# direction = "all"            # or "x" / "y" for directional TCB

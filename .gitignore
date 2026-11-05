@@ -1,0 +1,22 @@
+# Julia
+Manifest.toml
+Manifest-v*.toml
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+lcov.info
+
+# documentation build
+docs/build/
+docs/site/
+
+# editors and OS
+*.swp
+*.swo
+*~
+.DS_Store
+.vscode/
+
+# analysis output when running examples/tests in place
+membrane_analysis_results/
+test/temp_out/
